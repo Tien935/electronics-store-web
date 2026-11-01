@@ -8,13 +8,13 @@
 
 ## 👥 Danh Sách Thành Viên & Phân Công Nhiệm Vụ
 
-| STT | | Họ và Tên | Vai Trò | Cụm Dịch Vụ Phụ Trách |
+| STT | | Họ và Tên |
 | :---: | | :--- | :--- | :--- |
-| **1** | | **Đỗ Đức Tiền** | **Quản lý dự án & Backend Lead** | `api-gateway`, `identity-service`, Quản trị Git/Jira, Báo cáo |
-| **2** | | **Võ Xuân Quang** | **Backend Developer** | `catalog-service`, `inventory-service` (Quản lý vòng đời IMEI) |
-| **3** | | **Cao Đình Long** | **Backend Developer** | `order-service` (Giỏ hàng, Đơn hàng, Voucher, Cổng VNPAY) |
-| **4** | | **Vũ Văn Dương** | **AI Engineer** | `ai-service` (FastAPI, RAG Chatbot, Gemini API, ChromaDB) |
-| **5** | | **Nguyễn Ngọc Tú** | **Frontend Lead** | `frontend` (Next.js 14/15 App Router, Tailwind CSS, Shadcn/UI) |
+| **1** | | **Đỗ Đức Tiền** | 
+| **2** | | **Võ Xuân Quang** |
+| **3** | | **Cao Đình Long** |
+| **4** | | **Vũ Văn Dương** | 
+| **5** | | **Nguyễn Ngọc Tú** 
 
 ---
 
