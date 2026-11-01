@@ -47,7 +47,7 @@ Hệ thống được thiết kế theo mô hình **Microservices** phân tán k
          v                    v                    v                    v                    v
 +------------------+ +------------------+ +------------------+ +------------------+ +------------------+
 | retail_identity  | |  retail_catalog  | | retail_inventory | |   retail_order   | |    ChromaDB      |
-|    (MySQL 8.0)   | |    (MySQL 8.0)   | |    (MySQL 8.0)   | |    (MySQL 8.0)   | |  (Vector Store)  |
+|    (MySQL )   | |    (MySQL )   | |    (MySQL )   | |    (MySQL)   | |  (Vector Store)  |
 +------------------+ +------------------+ +------------------+ +------------------+ +------------------+
 ```
 
@@ -81,8 +81,8 @@ Hệ thống được thiết kế theo mô hình **Microservices** phân tán k
 ## 🛠️ Ngăn Xếp Công Nghệ (Technology Stack)
 
 *   **Backend:** Java 17/21, Spring Boot 3.x, Spring Cloud Gateway, Spring Cloud OpenFeign, Spring Security 6, JWT Stateless, Resilience4j.
-*   **Database:** MySQL 8.0 (Phân chia logical databases: `retail_identity_db`, `retail_catalog_db`, `retail_inventory_db`, `retail_order_db`).
-*   **Frontend:** Next.js 14/15 (App Router), TypeScript, Tailwind CSS, Shadcn/UI, Lucide Icons, TanStack Query, Axios.
+*   **Database:** MySQL  (Phân chia logical databases: `retail_identity_db`, `retail_catalog_db`, `retail_inventory_db`, `retail_order_db`).
+*   **Frontend:** Next.js  (App Router), TypeScript, Tailwind CSS, Shadcn/UI, Lucide Icons, TanStack Query, Axios.
 *   **AI Service:** Python 3.11+, FastAPI, Google Gemini API, ChromaDB (Vector Store), LangChain / LlamaIndex, Server-Sent Events (SSE).
 *   **DevOps & Testing:** Docker, Docker Compose, Postman Collections & Test Runner, JUnit 5, Mockito.
 
@@ -102,7 +102,7 @@ Hệ thống được thiết kế theo mô hình **Microservices** phân tán k
 
 ## 🚀 Hướng Dẫn Cài Đặt & Chạy Môi Trường Cục Bộ (Local Dev)
 
-### 1. Khởi chạy hạ tầng dữ liệu (MySQL 8.0 & ChromaDB)
+### 1. Khởi chạy hạ tầng dữ liệu (MySQL 8xx & ChromaDB)
 ```bash
 docker compose -f docker-compose.infra.yml up -d
 ```
