@@ -8,13 +8,13 @@
 
 ## 👥 Danh Sách Thành Viên & Phân Công Nhiệm Vụ
 
-| STT | Mã Sinh Viên | Họ và Tên | Vai Trò | Cụm Dịch Vụ Phụ Trách |
-| :---: | :---: | :--- | :--- | :--- |
-| **1** | **2023604620** | **Đỗ Đức Tiền** | **Quản lý dự án & Backend Lead** | `api-gateway`, `identity-service`, Quản trị Git/Jira, Báo cáo |
-| **2** | **2022605267** | **Võ Xuân Quang** | **Backend Developer** | `catalog-service`, `inventory-service` (Quản lý vòng đời IMEI) |
-| **3** | **2024608678** | **Cao Đình Long** | **Backend Developer** | `order-service` (Giỏ hàng, Đơn hàng, Voucher, Cổng VNPAY) |
-| **4** | **2023604559** | **Vũ Văn Dương** | **AI Engineer** | `ai-service` (FastAPI, RAG Chatbot, Gemini API, ChromaDB) |
-| **5** | **2023603758** | **Nguyễn Ngọc Tú** | **Frontend Lead** | `frontend` (Next.js 14/15 App Router, Tailwind CSS, Shadcn/UI) |
+| STT | | Họ và Tên | Vai Trò | Cụm Dịch Vụ Phụ Trách |
+| :---: | | :--- | :--- | :--- |
+| **1** | | **Đỗ Đức Tiền** | **Quản lý dự án & Backend Lead** | `api-gateway`, `identity-service`, Quản trị Git/Jira, Báo cáo |
+| **2** | | **Võ Xuân Quang** | **Backend Developer** | `catalog-service`, `inventory-service` (Quản lý vòng đời IMEI) |
+| **3** | | **Cao Đình Long** | **Backend Developer** | `order-service` (Giỏ hàng, Đơn hàng, Voucher, Cổng VNPAY) |
+| **4** | | **Vũ Văn Dương** | **AI Engineer** | `ai-service` (FastAPI, RAG Chatbot, Gemini API, ChromaDB) |
+| **5** | | **Nguyễn Ngọc Tú** | **Frontend Lead** | `frontend` (Next.js 14/15 App Router, Tailwind CSS, Shadcn/UI) |
 
 ---
 
