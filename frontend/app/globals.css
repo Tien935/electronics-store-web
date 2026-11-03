@@ -1,0 +1,117 @@
+/* Import font Roboto chuẩn tiếng Việt của CellphoneS */
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap');
+
+:root {
+  --cps-red: #d70018;
+  --cps-red-dark: #b80014;
+  --cps-red-hover: #e00d25;
+  --cps-bg-light: #f4f6f8;
+
+  /* Đồng bộ toàn bộ font biến của template về Roboto */
+  --f-display: 'Roboto', system-ui, -apple-system, sans-serif !important;
+  --f-body: 'Roboto', system-ui, -apple-system, sans-serif !important;
+  --f-mono: 'Roboto', system-ui, -apple-system, sans-serif !important;
+}
+
+/* ÁP DỤNG ĐỒNG BỘ 100% TOÀN BỘ CÁC THẺ VỀ FONT ROBOTO */
+*, *::before, *::after,
+html, body, 
+h1, h2, h3, h4, h5, h6, 
+p, span, a, div, 
+button, input, select, textarea, 
+b, strong, s, label, small {
+  font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: #f4f6f8;
+  color: #333333;
+}
+
+/* Chuẩn hóa lại tiêu đề để không bị font hẹp/cao kiểu signage */
+h1, h2, h3, h4, h5, h6 {
+  letter-spacing: normal !important;
+}
+
+/* Header màu đỏ thương hiệu CellphoneS */
+.site-header {
+  background-color: var(--cps-red) !important;
+  border-bottom: 2px solid var(--cps-red-dark) !important;
+}
+
+/* Topbar màu đỏ sẫm đặc trưng */
+.topbar {
+  background-color: var(--cps-red-dark) !important;
+  color: #fff !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15) !important;
+}
+
+.topbar span, .topbar strong {
+  color: #ffffff !important;
+}
+
+/* Tùy chỉnh thanh tìm kiếm bo tròn chuẩn CellphoneS */
+.site-header .searchbar {
+  background: #ffffff !important;
+  border-radius: 24px !important;
+  border: none !important;
+  padding: 4px 14px !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08) !important;
+}
+
+.site-header .searchbar input {
+  color: #333 !important;
+  font-size: 0.9rem !important;
+}
+
+.site-header .searchbar .search-btn {
+  color: var(--cps-red) !important;
+  background: none !important;
+  border: none !important;
+}
+
+.site-header .searchbar .cat-select {
+  border-right: 1px solid #e0e0e0 !important;
+  color: #555 !important;
+  font-size: 0.85rem !important;
+}
+
+/* Menu danh mục phụ */
+.deptnav {
+  background: #ffffff !important;
+  border-bottom: 1px solid #e5e7eb !important;
+}
+
+.deptnav a.dept-link:hover {
+  color: var(--cps-red) !important;
+}
+
+.deptnav a.dept-link.hot {
+  color: var(--cps-red) !important;
+  font-weight: 700 !important;
+}
+
+/* Tùy chỉnh nút primary thành màu đỏ CellphoneS */
+.btn-primary {
+  background-color: var(--cps-red) !important;
+  border-color: var(--cps-red) !important;
+}
+
+.btn-primary:hover {
+  background-color: var(--cps-red-hover) !important;
+  border-color: var(--cps-red-hover) !important;
+}
+
+.text-primary {
+  color: var(--cps-red) !important;
+}
+
+.bg-primary {
+  background-color: var(--cps-red) !important;
+}
+
+.badge.bg-danger {
+  background-color: var(--cps-red) !important;
+}
