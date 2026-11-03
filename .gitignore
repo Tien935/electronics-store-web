@@ -5,7 +5,7 @@ target/
 *.war
 *.ear
 *.nar
-.mvn/
+!.mvn/wrapper/maven-wrapper.jar
 
 # Node & Next.js
 node_modules/
