@@ -10,11 +10,17 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [alertMsg, setAlertMsg] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
 
   // Xử lý đăng nhập thông minh tự động nhận diện Role theo Email
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
+
     const form = e.currentTarget;
+
+    setAlertMsg('');
 
     if (!form.checkValidity()) {
       e.stopPropagation();
@@ -23,48 +29,42 @@ export default function LoginPage() {
     }
 
     setValidated(true);
+    setIsSubmitting(true);
 
-    // 1. Kiểm tra nếu là tài khoản Quản trị viên (ADMIN)
-    if (email.trim().toLowerCase() === 'admin@techmart.vn') {
-      if (password === 'admin123') {
-        const adminData = {
-          name: 'Administrator',
-          email: 'admin@techmart.vn',
-          role: 'ADMIN',
-        };
-        // Lưu riêng vào adminUser, không đè lên tài khoản khách của trang chủ
-        localStorage.setItem('adminUser', JSON.stringify(adminData));
-        localStorage.removeItem('currentUser');
-        setAlertMsg('');
-        router.push('/admin'); // Chuyển thẳng vào Dashboard Admin
-      } else {
-        setAlertMsg('Mật khẩu Admin không chính xác! (Mật khẩu mặc định: admin123)');
+    try {
+      const response = await fetch(`${apiBaseUrl}/api/auth/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: email.trim(),
+          password,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setAlertMsg(data.message || 'Đăng nhập không thành công.');
+        return;
       }
-      return;
-    }
 
-    // 2. Nếu là tài khoản Khách hàng thông thường (CUSTOMER)
-    const customerName = email.includes('@') ? email.split('@')[0] : 'Khách Hàng VIP';
-    const customerUser = {
-      name: customerName,
-      email: email,
-      role: 'CUSTOMER',
-    };
-    localStorage.setItem('currentUser', JSON.stringify(customerUser));
-    setAlertMsg('');
-    router.push('/'); // Chuyển về trang chủ mua sắm
-  };
+      localStorage.setItem('accessToken', data.accessToken);
+      localStorage.setItem('currentUser', JSON.stringify(data.user));
+      localStorage.removeItem('adminUser');
 
-  // Điền nhanh tài khoản mẫu để test nhanh
-  const fillSampleAccount = (sampleType) => {
-    if (sampleType === 'admin') {
-      setEmail('admin@techmart.vn');
-      setPassword('admin123');
-      setAlertMsg('');
-    } else {
-      setEmail('khachhang@gmail.com');
-      setPassword('123456');
-      setAlertMsg('');
+      if (data.user.roles.includes('ADMIN')) {
+        router.push('/admin');
+      } else {
+        router.push('/');
+      }
+    } catch (error) {
+      setAlertMsg(
+          'Không thể kết nối đến máy chủ. Vui lòng kiểm tra lại các service.'
+      );
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -138,8 +138,25 @@ export default function LoginPage() {
               <label className="form-check-label small text-muted" htmlFor="rememberMe">Ghi nhớ đăng nhập</label>
             </div>
 
-            <button type="submit" className="btn btn-primary w-100 py-2 fw-bold shadow-sm">
-              <i className="bi bi-box-arrow-in-right me-1"></i>Đăng Nhập
+            <button
+                type="submit"
+                className="btn btn-primary w-100 py-2 fw-bold shadow-sm"
+                disabled={isSubmitting}
+            >
+              {isSubmitting ? (
+                  <>
+                    <span
+                      className="spinner-border spinner-border-sm me-2"
+                      aria-hidden="true"
+                    ></span>
+                      Đang đăng nhập...
+                  </>
+              ) : (
+                  <>
+                    <i className="bi bi-box-arrow-in-right me-1"></i>
+                    Đăng Nhập
+                  </>
+              )}
             </button>
           </form>
 
@@ -149,29 +166,6 @@ export default function LoginPage() {
             <Link href="/register" className="small fw-bold text-primary text-decoration-none">
               Đăng ký ngay
             </Link>
-          </div>
-
-          {/* Gợi ý tài khoản demo */}
-          <div className="mt-3 p-3 bg-light rounded-3 border small">
-            <span className="fw-bold text-muted d-block mb-1">
-              <i className="bi bi-info-circle me-1"></i>Gợi ý tài khoản thử nghiệm:
-            </span>
-            <div className="d-flex gap-2 mt-2">
-              <button
-                type="button"
-                className="btn btn-sm btn-outline-danger w-50"
-                onClick={() => fillSampleAccount('admin')}
-              >
-                👑 Tài khoản Admin
-              </button>
-              <button
-                type="button"
-                className="btn btn-sm btn-outline-primary w-50"
-                onClick={() => fillSampleAccount('user')}
-              >
-                👤 Tài khoản Khách
-              </button>
-            </div>
           </div>
         </div>
 

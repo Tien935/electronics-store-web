@@ -1,6 +1,8 @@
 package com.jvnc.identity.controller;
 
+import com.jvnc.identity.dto.request.LoginRequest;
 import com.jvnc.identity.dto.request.RegisterRequest;
+import com.jvnc.identity.dto.response.LoginResponse;
 import com.jvnc.identity.dto.response.UserResponse;
 import com.jvnc.identity.service.AuthService;
 import jakarta.validation.Valid;
@@ -30,5 +32,14 @@ public class AuthController {
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(response);
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<LoginResponse> login(
+            @Valid @RequestBody LoginRequest request
+    ) {
+        LoginResponse response = authService.login(request);
+
+        return ResponseEntity.ok(response);
     }
 }
