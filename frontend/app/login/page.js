@@ -14,7 +14,7 @@ export default function LoginPage() {
 
   const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
 
-  // Xử lý đăng nhập thông minh tự động nhận diện Role theo Email
+
   const handleLogin = async (e) => {
     e.preventDefault();
 
@@ -52,12 +52,15 @@ export default function LoginPage() {
 
       localStorage.setItem('accessToken', data.accessToken);
       localStorage.setItem('currentUser', JSON.stringify(data.user));
-      localStorage.removeItem('adminUser');
 
-      if (data.user.roles.includes('ADMIN')) {
-        router.push('/admin');
+      const isAdmin =
+          Array.isArray(data.user?.roles) &&
+          data.user.roles.includes('ADMIN');
+
+      if (isAdmin) {
+        router.replace('/admin');
       } else {
-        router.push('/');
+        router.replace('/');
       }
     } catch (error) {
       setAlertMsg(

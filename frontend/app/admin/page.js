@@ -109,24 +109,29 @@ export default function AdminDashboard() {
 
   // Auth Guard: Chỉ cho phép người dùng ADMIN
   useEffect(() => {
-    const saved = localStorage.getItem('adminUser') || localStorage.getItem('currentUser');
-    if (saved) {
+    const savedUser = localStorage.getItem('currentUser');
+
+    if (savedUser) {
       try {
-        const user = JSON.parse(saved);
-        if (user.role === 'ADMIN') {
+        const user = JSON.parse(savedUser);
+
+        if (Array.isArray(user.roles) && user.roles.includes('ADMIN')) {
           setCurrentUser(user);
         }
-      } catch (err) {
-        console.error(err);
+      } catch (error) {
+        console.error('Không thể đọc thông tin người dùng:', error);
+        localStorage.removeItem('currentUser');
+        localStorage.removeItem('accessToken');
       }
     }
+
     setIsLoading(false);
   }, []);
 
   const handleLogout = () => {
-    localStorage.removeItem('adminUser');
     localStorage.removeItem('currentUser');
-    router.push('/login');
+    localStorage.removeItem('accessToken');
+    router.replace('/login');
   };
 
   const showAlert = (message, type = 'success') => {
