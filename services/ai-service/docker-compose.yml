@@ -1,0 +1,14 @@
+services:
+  ai-service:
+    build: .
+    ports:
+      - "8085:8085"
+    env_file: .env
+    volumes:
+      - ./app:/srv/app                                   # sửa code là server tự reload
+      - ./data/phones_spec.json:/srv/data/phones_spec.json
+      - chroma_data:/srv/data/chroma_storage             # giữ dữ liệu ChromaDB
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8085 --reload
+
+volumes:
+  chroma_data:
