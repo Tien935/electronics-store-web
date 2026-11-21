@@ -1,0 +1,541 @@
+{
+  "info": {
+    "name": "TECH-MART Microservices API Collection (HaUI - Nhom 01)",
+    "description": "Bộ API kiểm thử hoàn chỉnh cho hệ thống Microservices TECH-MART:\\n- Product Service (Port 8082): Catalog, Biến thể, Thông số JSON & Quản lý IMEI Inventory\\n- Order Service (Port 8084): Quản lý Đơn hàng & Order State Machine",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "product_url",
+      "value": "http://localhost:8082",
+      "type": "string"
+    },
+    {
+      "key": "order_url",
+      "value": "http://localhost:8084",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Product Service - Catalog (Port 8082)",
+      "item": [
+        {
+          "name": "1.1. Lấy danh sách sản phẩm (Filter & Search)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{product_url}}/api/products?keyword=iPhone&status=ACTIVE",
+              "host": [
+                "{{product_url}}"
+              ],
+              "path": [
+                "api",
+                "products"
+              ],
+              "query": [
+                {
+                  "key": "keyword",
+                  "value": "iPhone"
+                },
+                {
+                  "key": "status",
+                  "value": "ACTIVE"
+                }
+              ]
+            },
+            "description": "Lấy danh sách sản phẩm có tìm kiếm theo từ khóa và trạng thái"
+          }
+        },
+        {
+          "name": "1.2. Xem chi tiết sản phẩm theo Mã (kèm Specs JSON & Biến thể)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{product_url}}/api/products/code/IP16PM",
+              "host": [
+                "{{product_url}}"
+              ],
+              "path": [
+                "api",
+                "products",
+                "code",
+                "IP16PM"
+              ]
+            },
+            "description": "Lấy chi tiết iPhone 16 Pro Max kèm specs JSON và tồn kho từng biến thể"
+          }
+        },
+        {
+          "name": "1.3. Xem chi tiết sản phẩm theo Slug",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{product_url}}/api/products/slug/samsung-galaxy-s24-ultra",
+              "host": [
+                "{{product_url}}"
+              ],
+              "path": [
+                "api",
+                "products",
+                "slug",
+                "samsung-galaxy-s24-ultra"
+              ]
+            }
+          }
+        },
+        {
+          "name": "1.4. Tạo sản phẩm mới kèm Thông số JSON (Create Product)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productCode\": \"IP16PRO\",\n  \"name\": \"iPhone 16 Pro\",\n  \"slug\": \"iphone-16-pro\",\n  \"categoryId\": 1,\n  \"brandId\": 1,\n  \"basePrice\": 28990000,\n  \"description\": \"Titan sa mạc sang trọng, Chip Apple A18 Pro, Camera zoom quang 5x\",\n  \"thumbnailUrl\": \"https://techmart.vn/products/ip16pro.png\",\n  \"specs\": {\n    \"screen\": \"6.3 inch OLED Super Retina XDR, 120Hz ProMotion\",\n    \"chipset\": \"Apple A18 Pro (3nm)\",\n    \"ram\": \"8GB\",\n    \"rear_camera\": \"48MP Fusion + 48MP Ultra-wide + 12MP Telephoto 5x\",\n    \"front_camera\": \"12MP TrueDepth\",\n    \"battery\": \"3582 mAh, Sạc nhanh MagSafe 25W\",\n    \"os\": \"iOS 18\",\n    \"connectivity\": \"5G, Wi-Fi 7, USB-C 3.0\",\n    \"weight\": \"199g\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{product_url}}/api/products",
+              "host": [
+                "{{product_url}}"
+              ],
+              "path": [
+                "api",
+                "products"
+              ]
+            }
+          }
+        },
+        {
+          "name": "1.5. Cập nhật riêng thông số kỹ thuật JSON (Patch Specs)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"screen\": \"6.9 inch OLED Super Retina XDR, 120Hz ProMotion (Đã nâng cấp độ sáng 2500 nits)\",\n  \"chipset\": \"Apple A18 Pro (3nm, 6-core GPU, Neural Engine 16 lõi)\",\n  \"ram\": \"8GB LPDDR5X\",\n  \"rear_camera\": \"48MP Fusion + 48MP Ultra-wide + 12MP Telephoto 5x\",\n  \"battery\": \"4685 mAh, Sạc nhanh MagSafe 25W, Qi2\",\n  \"water_resistance\": \"IP68 (6m trong 30 phút)\"\n}"
+            },
+            "url": {
+              "raw": "{{product_url}}/api/products/1/specs",
+              "host": [
+                "{{product_url}}"
+              ],
+              "path": [
+                "api",
+                "products",
+                "1",
+                "specs"
+              ]
+            }
+          }
+        },
+        {
+          "name": "1.6. Thêm Biến thể mới cho sản phẩm (Create Variant)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sku\": \"IP16PM-1TB-DESERT\",\n  \"variantName\": \"iPhone 16 Pro Max 1TB Sa Mạc\",\n  \"color\": \"Desert Titanium\",\n  \"storage\": \"1TB\",\n  \"ram\": \"8GB\",\n  \"price\": 46990000,\n  \"originalPrice\": 46990000,\n  \"imageUrl\": \"https://techmart.vn/img/ip16pm-1tb.png\"\n}"
+            },
+            "url": {
+              "raw": "{{product_url}}/api/products/1/variants",
+              "host": [
+                "{{product_url}}"
+              ],
+              "path": [
+                "api",
+                "products",
+                "1",
+                "variants"
+              ]
+            }
+          }
+        },
+        {
+          "name": "1.7. Danh sách Biến thể của iPhone 16 Pro Max",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{product_url}}/api/products/1/variants",
+              "host": [
+                "{{product_url}}"
+              ],
+              "path": [
+                "api",
+                "products",
+                "1",
+                "variants"
+              ]
+            }
+          }
+        },
+        {
+          "name": "1.8. Danh sách Chi nhánh cửa hàng O2O",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{product_url}}/api/branches",
+              "host": [
+                "{{product_url}}"
+              ],
+              "path": [
+                "api",
+                "branches"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Product Service - Inventory & IMEI (Port 8082)",
+      "item": [
+        {
+          "name": "2.1. Nhập hàng loạt mã IMEI vào kho chi nhánh (Bulk Import)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"variantId\": 101,\n  \"branchId\": 1,\n  \"importPrice\": 31500000,\n  \"warrantyMonths\": 12,\n  \"note\": \"Nhập kho đợt 2 hàng VN/A\",\n  \"imeis\": [\n    \"359999123456711\",\n    \"359999123456712\",\n    \"359999123456713\"\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{product_url}}/api/inventory/imeis/bulk-import",
+              "host": [
+                "{{product_url}}"
+              ],
+              "path": [
+                "api",
+                "inventory",
+                "imeis",
+                "bulk-import"
+              ]
+            }
+          }
+        },
+        {
+          "name": "2.2. Tra cứu nguồn gốc & bảo hành thiết bị theo IMEI",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{product_url}}/api/inventory/imeis/356789123456781",
+              "host": [
+                "{{product_url}}"
+              ],
+              "path": [
+                "api",
+                "inventory",
+                "imeis",
+                "356789123456781"
+              ]
+            },
+            "description": "Tra cứu mã máy, chi nhánh đang giữ, trạng thái kho, hạn bảo hành"
+          }
+        },
+        {
+          "name": "2.3. Lọc danh sách IMEI theo Trạng thái & Chi nhánh",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{product_url}}/api/inventory/imeis?status=IN_STOCK&branchId=1",
+              "host": [
+                "{{product_url}}"
+              ],
+              "path": [
+                "api",
+                "inventory",
+                "imeis"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "IN_STOCK"
+                },
+                {
+                  "key": "branchId",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "2.4. Đổi trạng thái IMEI khi xuất bán (IN_STOCK -> SOLD)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"newStatus\": \"SOLD\",\n  \"orderCode\": \"ORD-20261121-888\",\n  \"customerPhone\": \"0988776655\",\n  \"note\": \"Bán trực tiếp tại quầy 79B Kim Ngưu - Kích hoạt bảo hành điện tử 12 tháng\"\n}"
+            },
+            "url": {
+              "raw": "{{product_url}}/api/inventory/imeis/356789123456782/status",
+              "host": [
+                "{{product_url}}"
+              ],
+              "path": [
+                "api",
+                "inventory",
+                "imeis",
+                "356789123456782",
+                "status"
+              ]
+            }
+          }
+        },
+        {
+          "name": "2.5. Điều chuyển thiết bị sang chi nhánh khác (Transfer Branch)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"targetBranchId\": 2,\n  \"reason\": \"Chi nhánh Thái Hà đang hết hàng khách cần lấy gấp\"\n}"
+            },
+            "url": {
+              "raw": "{{product_url}}/api/inventory/imeis/356789123456781/transfer",
+              "host": [
+                "{{product_url}}"
+              ],
+              "path": [
+                "api",
+                "inventory",
+                "imeis",
+                "356789123456781",
+                "transfer"
+              ]
+            }
+          }
+        },
+        {
+          "name": "2.6. Báo cáo tồn kho O2O theo từng Chi nhánh (Stock Report)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{product_url}}/api/inventory/stock-report/101",
+              "host": [
+                "{{product_url}}"
+              ],
+              "path": [
+                "api",
+                "inventory",
+                "stock-report",
+                "101"
+              ]
+            },
+            "description": "Báo cáo tổng số lượng máy và phân bổ cụ thể ở từng chi nhánh Kim Ngưu, Thái Hà, Cầu Giấy..."
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Order Service - Đơn hàng & State Machine (Port 8084)",
+      "item": [
+        {
+          "name": "3.1. Tạo đơn hàng mới O2O (Create Order - PENDING)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": 1,\n  \"customerName\": \"Đỗ Đức Tiền\",\n  \"customerPhone\": \"0987654321\",\n  \"customerEmail\": \"tien.do@techmart.vn\",\n  \"shippingAddress\": \"79B Kim Ngưu, Hai Bà Trưng, Hà Nội\",\n  \"branchId\": 1,\n  \"branchName\": \"FPT Shop 79B Kim Ngưu\",\n  \"paymentMethod\": \"COD\",\n  \"discountAmount\": 500000,\n  \"note\": \"Giao giờ hành chính, gọi trước khi giao\",\n  \"items\": [\n    {\n      \"productId\": 1,\n      \"productCode\": \"IP16PM\",\n      \"productName\": \"iPhone 16 Pro Max\",\n      \"variantName\": \"Desert Titanium / 256GB\",\n      \"imei\": \"356789123456781\",\n      \"unitPrice\": 34990000,\n      \"quantity\": 1\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{order_url}}/api/orders",
+              "host": [
+                "{{order_url}}"
+              ],
+              "path": [
+                "api",
+                "orders"
+              ]
+            }
+          }
+        },
+        {
+          "name": "3.2. Lấy chi tiết đơn hàng (kèm các trạng thái hợp lệ tiếp theo)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{order_url}}/api/orders/1",
+              "host": [
+                "{{order_url}}"
+              ],
+              "path": [
+                "api",
+                "orders",
+                "1"
+              ]
+            }
+          }
+        },
+        {
+          "name": "3.3. Chuyển trạng thái hợp lệ (PENDING -> CONFIRMED)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"targetStatus\": \"CONFIRMED\",\n  \"reason\": \"Nhân viên đã gọi điện thoại xác nhận đơn và giữ hàng tồn kho chi nhánh\",\n  \"changedBy\": \"STAFF_TIEN\"\n}"
+            },
+            "url": {
+              "raw": "{{order_url}}/api/orders/1/status",
+              "host": [
+                "{{order_url}}"
+              ],
+              "path": [
+                "api",
+                "orders",
+                "1",
+                "status"
+              ]
+            }
+          }
+        },
+        {
+          "name": "3.4. Chuyển trạng thái (CONFIRMED -> PROCESSING)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"targetStatus\": \"PROCESSING\",\n  \"reason\": \"Kho chi nhánh bắt đầu kiểm tra máy, dán tem và đóng gói\",\n  \"changedBy\": \"STAFF_KHO\"\n}"
+            },
+            "url": {
+              "raw": "{{order_url}}/api/orders/1/status",
+              "host": [
+                "{{order_url}}"
+              ],
+              "path": [
+                "api",
+                "orders",
+                "1",
+                "status"
+              ]
+            }
+          }
+        },
+        {
+          "name": "3.5. TEST CHẶN LỖI: Thử chuyển DELIVERED -> CANCELLED (Expected 400 Bad Request)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"targetStatus\": \"CANCELLED\",\n  \"reason\": \"Cố tình bấm hủy đơn hàng đã giao thành công\",\n  \"changedBy\": \"CUSTOMER\"\n}"
+            },
+            "url": {
+              "raw": "{{order_url}}/api/orders/3/status",
+              "host": [
+                "{{order_url}}"
+              ],
+              "path": [
+                "api",
+                "orders",
+                "3",
+                "status"
+              ]
+            },
+            "description": "Kiểm tra tính đúng đắn của State Machine: Chặn tuyệt đối nhảy cóc trạng thái sai, trả về HTTP 400 kèm các trạng thái hợp lệ được phép."
+          }
+        },
+        {
+          "name": "3.6. Xem Audit Trail lịch sử thay đổi trạng thái đơn hàng",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{order_url}}/api/orders/1/history",
+              "host": [
+                "{{order_url}}"
+              ],
+              "path": [
+                "api",
+                "orders",
+                "1",
+                "history"
+              ]
+            }
+          }
+        },
+        {
+          "name": "3.7. Xem toàn bộ ma trận quy tắc Order State Machine",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{order_url}}/api/order-state-machine/rules",
+              "host": [
+                "{{order_url}}"
+              ],
+              "path": [
+                "api",
+                "order-state-machine",
+                "rules"
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
