@@ -2,93 +2,106 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 
 export default function AdminDashboard() {
   const router = useRouter();
   const [currentUser, setCurrentUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
 
-  // Hàm tính viết tắt ký tự đại diện cho Avatar (Initials)
-  const getInitials = (name) => {
-    if (!name) return 'TM';
-    const parts = name.trim().split(' ').filter(Boolean);
-    if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
-    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-  };
-
-  const badgeColors = [
-    'bg-primary text-white',
-    'bg-success text-white',
-    'bg-warning text-dark',
-    'bg-danger text-white',
-    'bg-info text-white',
-    'bg-dark text-white',
-  ];
-
-  // State danh sách sản phẩm & người dùng phục vụ DEMO CRUD (Dùng Avatar Initials chuyên nghiệp)
-  const [items, setItems] = useState([
+  // Dữ liệu mẫu sản phẩm thiết bị điện tử chuẩn chuỗi bán lẻ
+  const initialProducts = [
     {
       id: 'SP001',
       name: 'iPhone 16 Pro Max 256GB',
-      user: 'Nguyễn Văn An',
-      initials: 'NA',
-      badgeColor: 'bg-primary text-white',
-      email: 'nguyenvanan@techmart.vn',
-      country: 'VN',
+      category: 'Điện thoại',
       branch: 'Hà Nội (Cầu Giấy)',
-      usage: 73,
       price: 34990000,
-      stock: 10,
-      activity: '10 sec ago',
+      stock: 18,
+      sales: 432,
+      description: 'Chip Apple A18 Pro, Apple Intelligence, khung Titan sa mạc cao cấp.',
     },
     {
       id: 'SP002',
-      name: 'Samsung Galaxy S24 Ultra',
-      user: 'Trần Quốc Bảo',
-      initials: 'TB',
-      badgeColor: 'bg-success text-white',
-      email: 'tranbaocp@techmart.vn',
-      country: 'VN',
+      name: 'Samsung Galaxy S24 Ultra 512GB',
+      category: 'Điện thoại',
       branch: 'TP.HCM (Quận 1)',
-      usage: 45,
       price: 29990000,
       stock: 5,
-      activity: '5 minutes ago',
+      sales: 318,
+      description: 'Snapdragon 8 Gen 3 for Galaxy, Galaxy AI dịch thuật 2 chiều, bút S-Pen.',
     },
     {
       id: 'SP003',
-      name: 'MacBook Air M3 16GB',
-      user: 'Lê Hoàng Long',
-      initials: 'LL',
-      badgeColor: 'bg-warning text-dark',
-      email: 'lehoanglong@techmart.vn',
-      country: 'VN',
+      name: 'MacBook Air M3 15 inch 16GB/512GB',
+      category: 'Laptop',
       branch: 'Đà Nẵng (Hải Châu)',
-      usage: 90,
-      price: 27490000,
+      price: 32490000,
       stock: 12,
-      activity: '1 hour ago',
+      sales: 145,
+      description: 'Apple Silicon M3 8-core CPU / 10-core GPU, màn hình Liquid Retina sắc nét.',
     },
     {
       id: 'SP004',
-      name: 'iPad Pro M4 11 inch',
-      user: 'Phạm Minh Tuấn',
-      initials: 'PT',
-      badgeColor: 'bg-info text-white',
-      email: 'phamminhtuan@techmart.vn',
-      country: 'VN',
+      name: 'iPad Pro M4 11 inch Wi-Fi 256GB',
+      category: 'Tablet',
       branch: 'Hà Nội (Thái Hà)',
-      usage: 25,
       price: 28990000,
-      stock: 4,
-      activity: 'Last month',
+      stock: 3,
+      sales: 86,
+      description: 'Màn hình Ultra Retina XDR Tandem OLED đột phá, siêu mỏng 5.3mm.',
     },
-  ]);
+    {
+      id: 'SP005',
+      name: 'Tai nghe AirPods Pro 2 USB-C',
+      category: 'Phụ kiện',
+      branch: 'TP.HCM (Quận 1)',
+      price: 5790000,
+      stock: 45,
+      sales: 620,
+      description: 'Chip H2, chống ồn chủ động ANC gấp 2 lần, cổng sạc Type-C tiện lợi.',
+    },
+    {
+      id: 'SP006',
+      name: 'Laptop Gaming ASUS ROG Zephyrus G16',
+      category: 'Laptop',
+      branch: 'Hà Nội (Cầu Giấy)',
+      price: 52990000,
+      stock: 6,
+      sales: 54,
+      description: 'Intel Core Ultra 9, RTX 4070, màn hình OLED 2.5K 240Hz siêu mượt.',
+    },
+    {
+      id: 'SP007',
+      name: 'Đồng hồ Apple Watch Series 10 46mm',
+      category: 'Phụ kiện',
+      branch: 'Đà Nẵng (Hải Châu)',
+      price: 11490000,
+      stock: 14,
+      sales: 198,
+      description: 'Màn hình OLED góc rộng sáng hơn 40%, phát hiện ngưng thở khi ngủ bằng AI.',
+    },
+    {
+      id: 'SP008',
+      name: 'Xiaomi 14 Ultra 5G 512GB Leica',
+      category: 'Điện thoại',
+      branch: 'Cần Thơ (Ninh Kiều)',
+      price: 26990000,
+      stock: 2,
+      sales: 72,
+      description: 'Ống kính quang học Leica Vario-Summilux, cảm biến 1 inch đỉnh cao.',
+    },
+  ];
 
-  // Search keyword state
+  // State danh sách sản phẩm phục vụ DEMO CRUD
+  const [products, setProducts] = useState(initialProducts);
+
+  // Search & Filter State
   const [searchKeyword, setSearchKeyword] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('ALL');
+  const [branchFilter, setBranchFilter] = useState('ALL');
+  const [sortBy, setSortBy] = useState('DEFAULT');
 
   // Modal State cho Thêm & Sửa CRUD
   const [showModal, setShowModal] = useState(false);
@@ -99,15 +112,15 @@ export default function AdminDashboard() {
   const [validated, setValidated] = useState(false);
   const [alertNotice, setAlertNotice] = useState({ show: false, message: '', type: 'success' });
   const [formData, setFormData] = useState({
-    user: '',
     name: '',
+    category: 'Điện thoại',
     branch: 'Hà Nội (Cầu Giấy)',
     price: '',
     stock: '',
-    usage: '70',
+    description: '',
   });
 
-  // Auth Guard: Chỉ cho phép người dùng ADMIN
+  // Auth Guard: Kiểm tra phiên đăng nhập ADMIN
   useEffect(() => {
     const savedUser = localStorage.getItem('currentUser');
 
@@ -144,12 +157,12 @@ export default function AdminDashboard() {
     setIsEditing(false);
     setCurrentEditId(null);
     setFormData({
-      user: '',
       name: '',
+      category: 'Điện thoại',
       branch: 'Hà Nội (Cầu Giấy)',
       price: '',
       stock: '',
-      usage: '75',
+      description: '',
     });
     setValidated(false);
     setShowModal(true);
@@ -160,12 +173,12 @@ export default function AdminDashboard() {
     setIsEditing(true);
     setCurrentEditId(item.id);
     setFormData({
-      user: item.user,
       name: item.name,
+      category: item.category,
       branch: item.branch,
       price: item.price,
       stock: item.stock,
-      usage: item.usage || '50',
+      description: item.description || '',
     });
     setValidated(false);
     setShowModal(true);
@@ -182,46 +195,43 @@ export default function AdminDashboard() {
       return;
     }
 
+    const priceNum = Number(formData.price);
+    const stockNum = Number(formData.stock);
+
     if (isEditing && currentEditId) {
       // UPDATE
-      setItems(
-        items.map((it) => {
-          if (it.id === currentEditId) {
+      setProducts((prev) =>
+        prev.map((p) => {
+          if (p.id === currentEditId) {
             return {
-              ...it,
-              user: formData.user,
-              initials: getInitials(formData.user),
+              ...p,
               name: formData.name,
+              category: formData.category,
               branch: formData.branch,
-              price: Number(formData.price),
-              stock: Number(formData.stock),
-              usage: Number(formData.usage),
+              price: priceNum,
+              stock: stockNum,
+              description: formData.description,
             };
           }
-          return it;
+          return p;
         })
       );
       showAlert(`Đã cập nhật thành công thiết bị [${formData.name}]!`, 'success');
     } else {
       // CREATE
-      const nextId = `SP00${items.length + 1}`;
-      const colorIndex = items.length % badgeColors.length;
-      const newItem = {
+      const nextId = `SP00${products.length + 1}`;
+      const newProduct = {
         id: nextId,
         name: formData.name,
-        user: formData.user,
-        initials: getInitials(formData.user),
-        badgeColor: badgeColors[colorIndex],
-        email: `${formData.user.toLowerCase().replace(/\s+/g, '')}@techmart.vn`,
-        country: 'VN',
+        category: formData.category,
         branch: formData.branch,
-        usage: Number(formData.usage) || 60,
-        price: Number(formData.price),
-        stock: Number(formData.stock),
-        activity: 'Just now',
+        price: priceNum,
+        stock: stockNum,
+        sales: 0,
+        description: formData.description,
       };
-      setItems([newItem, ...items]);
-      showAlert(`Đã thêm mới thiết bị [${formData.name}] vào hệ thống!`, 'success');
+      setProducts([newProduct, ...products]);
+      showAlert(`Đã thêm mới thiết bị [${formData.name}] vào hệ thống kho!`, 'success');
     }
 
     setShowModal(false);
@@ -231,26 +241,73 @@ export default function AdminDashboard() {
   // 4. XỬ LÝ XÓA (DELETE)
   const handleDelete = (id, name) => {
     if (window.confirm(`Bạn có chắc chắn muốn xóa thiết bị "${name}" (Mã: ${id}) khỏi hệ thống chuỗi?`)) {
-      setItems(items.filter((it) => it.id !== id));
-      showAlert(`Đã xóa thiết bị mã [${id}] thành công!`, 'danger');
+      setProducts((prev) => prev.filter((p) => p.id !== id));
+      showAlert(`Đã xóa thiết bị mã [${id}] khỏi danh sách thành công!`, 'danger');
     }
   };
 
-  // Lọc dữ liệu theo Search Keyword
-  const filteredItems = items.filter(
-    (it) =>
-      it.name.toLowerCase().includes(searchKeyword.toLowerCase()) ||
-      it.user.toLowerCase().includes(searchKeyword.toLowerCase()) ||
-      it.branch.toLowerCase().includes(searchKeyword.toLowerCase()) ||
-      it.id.toLowerCase().includes(searchKeyword.toLowerCase())
+  // 5. KHÔI PHỤC DỮ LIỆU GỐC
+  const handleResetData = () => {
+    if (window.confirm('Khôi phục toàn bộ danh sách sản phẩm mẫu ban đầu?')) {
+      setProducts(initialProducts);
+      showAlert('Đã khôi phục dữ liệu ban đầu thành công!', 'info');
+    }
+  };
+
+  // 6. XUẤT BÁO CÁO CSV (DEMO BÁO CÁO BTL)
+  const handleExportCSV = () => {
+    const headers = 'Mã SP,Tên thiết bị,Ngành hàng,Chi nhánh,Đơn giá (VNĐ),Tồn kho,Số lượng đã bán\n';
+    const rows = products
+      .map(
+        (p) =>
+          `"${p.id}","${p.name}","${p.category}","${p.branch}",${p.price},${p.stock},${p.sales}`
+      )
+      .join('\n');
+    const blob = new Blob(['\uFEFF' + headers + rows], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `BaoCao_ThietBi_TechMart_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    showAlert('Đã xuất báo cáo danh sách thiết bị thành công (file CSV)!', 'success');
+  };
+
+  // Tính toán KPI tự động từ danh sách
+  const totalStock = useMemo(() => products.reduce((acc, cur) => acc + cur.stock, 0), [products]);
+  const lowStockCount = useMemo(() => products.filter((p) => p.stock <= 5).length, [products]);
+  const totalInventoryValue = useMemo(
+    () => products.reduce((acc, cur) => acc + cur.price * cur.stock, 0),
+    [products]
   );
 
-  // Màn hình loading hoặc 403 Guard
+  // Lọc và sắp xếp sản phẩm
+  const filteredProducts = useMemo(() => {
+    let result = products.filter((p) => {
+      const matchSearch =
+        p.name.toLowerCase().includes(searchKeyword.toLowerCase()) ||
+        p.id.toLowerCase().includes(searchKeyword.toLowerCase()) ||
+        p.branch.toLowerCase().includes(searchKeyword.toLowerCase());
+      const matchCat = categoryFilter === 'ALL' || p.category === categoryFilter;
+      const matchBranch = branchFilter === 'ALL' || p.branch.includes(branchFilter);
+      return matchSearch && matchCat && matchBranch;
+    });
+
+    if (sortBy === 'PRICE_ASC') result.sort((a, b) => a.price - b.price);
+    if (sortBy === 'PRICE_DESC') result.sort((a, b) => b.price - a.price);
+    if (sortBy === 'STOCK_ASC') result.sort((a, b) => a.stock - b.stock);
+    if (sortBy === 'STOCK_DESC') result.sort((a, b) => b.stock - a.stock);
+
+    return result;
+  }, [products, searchKeyword, categoryFilter, branchFilter, sortBy]);
+
+  // Route Guard kiểm tra quyền truy cập 403
   if (isLoading) {
     return (
       <div className="min-vh-100 d-flex align-items-center justify-content-center bg-light">
-        <div className="spinner-border text-danger" role="status">
-          <span className="visually-hidden">Đang tải...</span>
+        <div className="spinner-border text-primary" role="status">
+          <span className="visually-hidden">Đang tải CoolAdmin...</span>
         </div>
       </div>
     );
@@ -268,7 +325,7 @@ export default function AdminDashboard() {
             Trang Dashboard Quản Trị Hệ Thống yêu cầu tài khoản với vai trò <strong>ADMIN</strong>. Vui lòng đăng nhập với tài khoản quản trị để tiếp tục.
           </p>
           <div className="d-flex flex-column gap-2">
-            <Link href="/login" className="btn btn-danger fw-bold py-2 shadow-sm">
+            <Link href="/login" className="btn btn-primary fw-bold py-2 shadow-sm">
               <i className="bi bi-box-arrow-in-right me-1"></i>Đăng Nhập Tài Khoản Quản Trị
             </Link>
             <Link href="/" className="btn btn-outline-secondary py-2">
@@ -281,266 +338,207 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="d-flex min-vh-100" style={{ backgroundColor: '#ebedef', fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif' }}>
-      {/* ================= 1. SIDEBAR (LOGO TECH-MART AI CHUẨN ĐỒ ÁN) ================= */}
+    <div className="d-flex min-vh-100" style={{ backgroundColor: '#f4f6f9', fontFamily: 'system-ui, -apple-system, Roboto, sans-serif' }}>
+      {/* ================= 1. COOLADMIN SIDEBAR ================= */}
       <aside
-        className="d-flex flex-column text-white shadow-sm flex-shrink-0"
+        className="d-flex flex-column flex-shrink-0 bg-white border-end shadow-sm"
         style={{
-          width: sidebarCollapsed ? '70px' : '256px',
-          backgroundColor: '#212631',
+          width: sidebarOpen ? '255px' : '75px',
           transition: 'width 0.25s ease',
           zIndex: 1040,
         }}
       >
-        {/* Brand header với Logo TECH-MART công nghệ sang trọng */}
+        {/* Brand Logo CoolAdmin */}
         <div
-          className="d-flex align-items-center justify-content-between px-3 py-3 border-bottom"
-          style={{ borderColor: 'rgba(255,255,255,0.08)', minHeight: '62px' }}
+          className="d-flex align-items-center justify-content-between px-3 border-bottom"
+          style={{ height: '70px' }}
         >
           <div className="d-flex align-items-center gap-2 overflow-hidden">
             <span
-              className="d-inline-flex align-items-center justify-content-center bg-danger rounded-3 text-white fw-bold shadow-sm"
-              style={{ width: '35px', height: '35px', fontSize: '18px', flexShrink: 0 }}
+              className="d-inline-flex align-items-center justify-content-center rounded-3 bg-danger text-white fw-bold shadow-sm"
+              style={{ width: '38px', height: '38px', fontSize: '18px', flexShrink: 0 }}
             >
               <i className="bi bi-cpu-fill"></i>
             </span>
-            {!sidebarCollapsed && (
-              <div className="d-flex flex-column" style={{ lineHeight: '1.15' }}>
-                <span className="fw-bold fs-6 tracking-wide d-flex align-items-center gap-1 text-white">
-                  TECH-MART <span className="badge bg-danger" style={{ fontSize: '9px', padding: '2px 5px' }}>ADMIN</span>
+            {sidebarOpen && (
+              <div className="d-flex flex-column" style={{ lineHeight: '1.2' }}>
+                <span className="fw-bold fs-6 text-dark tracking-wide">
+                  TECH<span className="text-danger">ADMIN</span>
                 </span>
-                <span className="text-white-50" style={{ fontSize: '10px' }}>Hệ thống quản lý chuỗi</span>
+                <span className="text-muted" style={{ fontSize: '10.5px' }}>Quản lý chuỗi bán lẻ</span>
               </div>
             )}
           </div>
           <button
-            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-            className="btn btn-link text-white-50 p-0 text-decoration-none"
-            title="Thu nhỏ sidebar"
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            className="btn btn-link text-muted p-0 text-decoration-none"
+            title="Thu nhỏ/Mở rộng sidebar"
           >
-            <i className={`bi ${sidebarCollapsed ? 'bi-chevron-right' : 'bi-chevron-left'} fs-6`}></i>
+            <i className={`bi ${sidebarOpen ? 'bi-chevron-left' : 'bi-chevron-right'} fs-6`}></i>
           </button>
         </div>
 
-        {/* Sidebar Nav Items */}
-        <div className="flex-grow-1 overflow-auto py-2">
-          {/* Dashboard item */}
-          <div className="px-2 mb-2">
-            <a
-              href="#"
-              className="nav-link active d-flex align-items-center justify-content-between px-3 py-2 rounded text-white"
-              style={{ backgroundColor: 'rgba(255,255,255,0.12)' }}
-            >
-              <div className="d-flex align-items-center gap-2">
-                <i className="bi bi-speedometer2 text-info"></i>
-                {!sidebarCollapsed && <span className="small fw-semibold">Dashboard</span>}
-              </div>
-              {!sidebarCollapsed && <span className="badge bg-info" style={{ fontSize: '9px' }}>NEW</span>}
-            </a>
-          </div>
-
-          {/* Group: COMPONENTS */}
-          {!sidebarCollapsed && (
-            <div className="px-3 pt-2 pb-1 text-uppercase text-white-50 small fw-bold" style={{ fontSize: '10px', letterSpacing: '0.8px' }}>
-              Components
-            </div>
-          )}
-          <ul className="nav flex-column px-2 mb-2">
+        {/* Sidebar Navigation */}
+        <div className="flex-grow-1 overflow-auto py-3">
+          <ul className="nav flex-column px-2 gap-1">
             <li className="nav-item">
-              <a href="#crudTable" className="nav-link text-white-50 px-3 py-2 d-flex align-items-center gap-2 small hover-white">
-                <i className="bi bi-phone"></i>
-                {!sidebarCollapsed && <span>Sản phẩm & Kho</span>}
+              <a
+                href="#"
+                className="nav-link active rounded-3 px-3 py-2 fw-semibold d-flex align-items-center gap-3 text-primary"
+                style={{ backgroundColor: '#eef2ff' }}
+              >
+                <i className="bi bi-speedometer2 fs-5"></i>
+                {sidebarOpen && <span>Tổng Quan (Dashboard)</span>}
               </a>
             </li>
+
+            <li className="nav-item">
+              <a
+                href="#crudTable"
+                className="nav-link rounded-3 px-3 py-2 text-secondary d-flex align-items-center gap-3 hover-primary"
+              >
+                <i className="bi bi-phone fs-5"></i>
+                {sidebarOpen && <span>Quản Lý Thiết Bị & Kho</span>}
+              </a>
+            </li>
+
             <li className="nav-item">
               <button
                 onClick={handleOpenAdd}
-                className="nav-link text-white-50 px-3 py-2 d-flex align-items-center gap-2 small hover-white w-100 text-start border-0 bg-transparent"
+                className="nav-link rounded-3 px-3 py-2 text-secondary d-flex align-items-center gap-3 w-100 text-start border-0 bg-transparent hover-primary"
               >
-                <i className="bi bi-plus-circle text-success"></i>
-                {!sidebarCollapsed && <span className="text-white fw-semibold">Thêm thiết bị mới</span>}
+                <i className="bi bi-plus-circle fs-5 text-success"></i>
+                {sidebarOpen && <span className="text-dark fw-semibold">Thêm Thiết Bị Mới</span>}
               </button>
             </li>
-            <li className="nav-item">
-              <a href="#" className="nav-link text-white-50 px-3 py-2 d-flex align-items-center gap-2 small hover-white">
-                <i className="bi bi-receipt"></i>
-                {!sidebarCollapsed && <span>Đơn hàng chuỗi</span>}
-              </a>
-            </li>
-            <li className="nav-item">
-              <a href="#" className="nav-link text-white-50 px-3 py-2 d-flex align-items-center gap-2 small hover-white">
-                <i className="bi bi-people"></i>
-                {!sidebarCollapsed && <span>Khách hàng</span>}
-              </a>
-            </li>
-            <li className="nav-item">
-              <a href="#" className="nav-link text-white-50 px-3 py-2 d-flex align-items-center gap-2 small hover-white">
-                <i className="bi bi-bell"></i>
-                {!sidebarCollapsed && <span>Thông báo</span>}
-              </a>
-            </li>
-            <li className="nav-item">
-              <a href="#" className="nav-link text-white-50 px-3 py-2 d-flex align-items-center justify-content-between small hover-white">
-                <div className="d-flex align-items-center gap-2">
-                  <i className="bi bi-calculator"></i>
-                  {!sidebarCollapsed && <span>Widgets</span>}
-                </div>
-                {!sidebarCollapsed && <span className="badge bg-info" style={{ fontSize: '9px' }}>NEW</span>}
-              </a>
-            </li>
-          </ul>
 
-          {/* Group: PLUGINS */}
-          {!sidebarCollapsed && (
-            <div className="px-3 pt-2 pb-1 text-uppercase text-white-50 small fw-bold" style={{ fontSize: '10px', letterSpacing: '0.8px' }}>
-              Plugins
-            </div>
-          )}
-          <ul className="nav flex-column px-2 mb-2">
             <li className="nav-item">
-              <a href="#" className="nav-link text-white-50 px-3 py-2 d-flex align-items-center justify-content-between small hover-white">
-                <div className="d-flex align-items-center gap-2">
-                  <i className="bi bi-calendar3"></i>
-                  {!sidebarCollapsed && <span>Calendar</span>}
-                </div>
-                {!sidebarCollapsed && <span className="badge bg-danger" style={{ fontSize: '9px' }}>PRO</span>}
+              <a
+                href="#activitySection"
+                className="nav-link rounded-3 px-3 py-2 text-secondary d-flex align-items-center gap-3 hover-primary"
+              >
+                <i className="bi bi-clock-history fs-5"></i>
+                {sidebarOpen && <span>Hoạt Động Chi Nhánh</span>}
               </a>
             </li>
-            <li className="nav-item">
-              <a href="#" className="nav-link text-white-50 px-3 py-2 d-flex align-items-center justify-content-between small hover-white">
-                <div className="d-flex align-items-center gap-2">
-                  <i className="bi bi-pie-chart"></i>
-                  {!sidebarCollapsed && <span>Charts AI</span>}
-                </div>
-              </a>
-            </li>
-            <li className="nav-item">
-              <a href="#" className="nav-link text-white-50 px-3 py-2 d-flex align-items-center justify-content-between small hover-white">
-                <div className="d-flex align-items-center gap-2">
-                  <i className="bi bi-table"></i>
-                  {!sidebarCollapsed && <span>DataTables</span>}
-                </div>
-                {!sidebarCollapsed && <span className="badge bg-danger" style={{ fontSize: '9px' }}>PRO</span>}
-              </a>
-            </li>
-            <li className="nav-item">
-              <a href="#" className="nav-link text-white-50 px-3 py-2 d-flex align-items-center justify-content-between small hover-white">
-                <div className="d-flex align-items-center gap-2">
-                  <i className="bi bi-geo-alt"></i>
-                  {!sidebarCollapsed && <span>150 Chi nhánh</span>}
-                </div>
-                {!sidebarCollapsed && <span className="badge bg-danger" style={{ fontSize: '9px' }}>PRO</span>}
-              </a>
-            </li>
-          </ul>
 
-          {/* Group: EXTRAS */}
-          {!sidebarCollapsed && (
-            <div className="px-3 pt-2 pb-1 text-uppercase text-white-50 small fw-bold" style={{ fontSize: '10px', letterSpacing: '0.8px' }}>
-              Extras
-            </div>
-          )}
-          <ul className="nav flex-column px-2 mb-2">
+
+
             <li className="nav-item">
-              <a href="#" className="nav-link text-white-50 px-3 py-2 d-flex align-items-center gap-2 small hover-white">
-                <i className="bi bi-file-earmark-text"></i>
-                {!sidebarCollapsed && <span>Pages</span>}
+              <a
+                href="#"
+                className="nav-link rounded-3 px-3 py-2 text-secondary d-flex align-items-center gap-3 hover-primary"
+              >
+                <i className="bi bi-cart-check fs-5"></i>
+                {sidebarOpen && <span>Đơn Hàng Chuỗi</span>}
               </a>
             </li>
+
             <li className="nav-item">
-              <a href="#" className="nav-link text-white-50 px-3 py-2 d-flex align-items-center gap-2 small hover-white">
-                <i className="bi bi-diagram-3"></i>
-                {!sidebarCollapsed && <span>Microservices</span>}
+              <a
+                href="#"
+                className="nav-link rounded-3 px-3 py-2 text-secondary d-flex align-items-center gap-3 hover-primary"
+              >
+                <i className="bi bi-geo-alt fs-5"></i>
+                {sidebarOpen && <span>150 Chi Nhánh</span>}
               </a>
             </li>
           </ul>
         </div>
 
-        {/* Sidebar Footer */}
-        <div className="p-3 border-top d-flex align-items-center justify-content-between" style={{ borderColor: 'rgba(255,255,255,0.08)' }}>
-          {!sidebarCollapsed ? (
+        {/* Sidebar Footer Logout */}
+        <div className="p-3 border-top d-flex align-items-center justify-content-between">
+          {sidebarOpen && (
             <div className="d-flex align-items-center gap-2">
-              <span className="badge bg-danger rounded-pill px-2 py-1" style={{ fontSize: '10px' }}>
-                <i className="bi bi-exclamation-circle me-1"></i>1 Issue ×
+              <span className="badge bg-success-subtle text-success border border-success-subtle px-2 py-1">
+                ● Hệ Thống Online
               </span>
             </div>
-          ) : null}
+          )}
           <button
             onClick={handleLogout}
-            className="btn btn-link text-danger p-0 text-decoration-none"
-            title="Đăng xuất"
+            className="btn btn-sm btn-outline-danger border-0"
+            title="Đăng xuất khỏi hệ thống"
           >
-            <i className="bi bi-box-arrow-right fs-5"></i>
+            <i className="bi bi-power fs-5"></i>
           </button>
         </div>
       </aside>
 
       {/* ================= 2. MAIN CONTENT WRAPPER ================= */}
       <div className="d-flex flex-column flex-grow-1 overflow-hidden">
-        {/* Top Navbar Header */}
-        <header className="bg-white border-bottom sticky-top shadow-sm px-4 py-2 d-flex align-items-center justify-content-between" style={{ minHeight: '62px' }}>
-          {/* Search bar */}
-          <div className="input-group input-group-sm" style={{ maxWidth: '320px' }}>
-            <span className="input-group-text bg-light border-end-0">
-              <i className="bi bi-search text-muted"></i>
+        {/* CoolAdmin Desktop Header */}
+        <header
+          className="bg-white border-bottom sticky-top shadow-sm px-4 d-flex align-items-center justify-content-between"
+          style={{ height: '70px' }}
+        >
+          {/* Search box with shortcut badge */}
+          <div className="input-group input-group-sm" style={{ maxWidth: '360px' }}>
+            <span className="input-group-text bg-light border-end-0 text-muted">
+              <i className="bi bi-search"></i>
             </span>
             <input
               type="text"
-              className="form-control bg-light border-start-0 ps-0"
-              placeholder="Search..."
+              className="form-control bg-light border-start-0 border-end-0 ps-0"
+              placeholder="Tìm kiếm thiết bị, mã sản phẩm, chi nhánh..."
               value={searchKeyword}
               onChange={(e) => setSearchKeyword(e.target.value)}
             />
+            <span className="input-group-text bg-light border-start-0">
+              <kbd className="bg-white text-muted border px-1" style={{ fontSize: '10px' }}>⌘K</kbd>
+            </span>
           </div>
 
-          {/* Right actions */}
+          {/* Right Action Widgets */}
           <div className="d-flex align-items-center gap-3">
-            {/* Link sang trang bán hàng */}
+            {/* Link xem Storefront */}
             <Link href="/" className="btn btn-outline-danger btn-sm rounded-pill px-3 fw-semibold">
               <i className="bi bi-shop me-1"></i>Xem Cửa Hàng
             </Link>
 
             {/* Notification icons */}
             <div className="d-flex align-items-center gap-3 text-secondary border-start ps-3">
-              <button className="btn btn-link text-secondary p-0 position-relative text-decoration-none">
-                <i className="bi bi-bell fs-5"></i>
-                <span className="position-absolute top-0 start-100 translate-middle p-1 bg-danger border border-light rounded-circle"></span>
+              <button className="btn btn-link text-secondary p-0 position-relative text-decoration-none" title="Tin nhắn">
+                <i className="bi bi-chat-dots fs-5"></i>
+                <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style={{ fontSize: '9px' }}>
+                  2
+                </span>
               </button>
-              <button className="btn btn-link text-secondary p-0 text-decoration-none">
-                <i className="bi bi-list-check fs-5"></i>
-              </button>
-              <button className="btn btn-link text-secondary p-0 text-decoration-none">
+              <button className="btn btn-link text-secondary p-0 position-relative text-decoration-none" title="Hộp thư">
                 <i className="bi bi-envelope fs-5"></i>
+                <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-primary" style={{ fontSize: '9px' }}>
+                  3
+                </span>
+              </button>
+              <button className="btn btn-link text-secondary p-0 position-relative text-decoration-none" title="Cảnh báo hệ thống">
+                <i className="bi bi-bell fs-5"></i>
+                <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-warning text-dark" style={{ fontSize: '9px' }}>
+                  {lowStockCount}
+                </span>
               </button>
             </div>
 
-            {/* User Profile với Avatar Icon Chuyên Nghiệp */}
+            {/* User Profile */}
             <div className="d-flex align-items-center gap-2 border-start ps-3">
               <div
-                className="d-inline-flex align-items-center justify-content-center rounded-circle bg-danger text-white fw-bold shadow-sm"
-                style={{ width: '36px', height: '36px', fontSize: '16px', flexShrink: 0 }}
+                className="d-inline-flex align-items-center justify-content-center rounded-circle bg-primary text-white fw-bold shadow-sm"
+                style={{ width: '38px', height: '38px', fontSize: '14px', flexShrink: 0 }}
               >
-                <i className="bi bi-person-fill"></i>
+                AD
               </div>
               <div className="d-none d-md-block text-start" style={{ lineHeight: '1.2' }}>
-                <span className="fw-bold small text-dark d-block">Quản Trị Viên</span>
-                <span className="text-success small" style={{ fontSize: '11px' }}>
-                  <span className="d-inline-block rounded-circle bg-success me-1" style={{ width: '7px', height: '7px' }}></span>
-                  Online
-                </span>
+                <span className="fw-bold small text-dark d-block">Admin</span>
+                <span className="text-muted" style={{ fontSize: '11px' }}>Administrator</span>
               </div>
-              <button className="btn btn-link text-secondary p-0 ms-1 text-decoration-none">
-                <i className="bi bi-grid-3x3-gap-fill fs-5"></i>
-              </button>
             </div>
           </div>
         </header>
 
-        {/* Toast / Notification Banner */}
+        {/* Toast Notification Alert */}
         {alertNotice.show && (
           <div className="px-4 pt-3">
             <div className={`alert alert-${alertNotice.type} alert-dismissible fade show shadow-sm mb-0 py-2 small`} role="alert">
-              <i className="bi bi-check-circle-fill me-2"></i>
+              <i className="bi bi-info-circle-fill me-2"></i>
               <strong>{alertNotice.message}</strong>
               <button
                 type="button"
@@ -551,324 +549,421 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        {/* Main scrollable body */}
+        {/* Main Dashboard Scrollable Area */}
         <main className="flex-grow-1 overflow-auto p-4">
-          {/* Breadcrumb & Title */}
-          <div className="mb-4">
-            <h3 className="fw-bold text-dark mb-0">Dashboard</h3>
-            <span className="text-muted small">Home / Dashboard</span>
-          </div>
-
-          {/* ================= 3. TOP ROW: SALE & TRAFFIC CHARTS ================= */}
-          <div className="row g-4 mb-4">
-            {/* Card 1: Sale Wave Chart */}
-            <div className="col-12 col-lg-7">
-              <div className="card border-0 shadow-sm rounded-3 h-100 bg-white">
-                <div className="card-body p-4 d-flex flex-column justify-content-between">
-                  <div>
-                    <div className="d-flex justify-content-between align-items-start mb-2">
-                      <div>
-                        <h5 className="fw-bold text-dark mb-0">Sale</h5>
-                        <small className="text-muted">January - July 2026</small>
-                      </div>
-                      <h3 className="fw-bold text-primary mb-0">$613.200</h3>
-                    </div>
-
-                    {/* Smooth Wave SVG Chart */}
-                    <div className="my-3" style={{ height: '140px', width: '100%' }}>
-                      <svg viewBox="0 0 500 140" preserveAspectRatio="none" style={{ width: '100%', height: '100%' }}>
-                        <defs>
-                          <linearGradient id="saleGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                            <stop offset="0%" stopColor="#321fdb" stopOpacity="0.25" />
-                            <stop offset="100%" stopColor="#321fdb" stopOpacity="0.0" />
-                          </linearGradient>
-                        </defs>
-                        <path
-                          d="M0,70 C100,70 150,95 200,85 C250,75 280,110 350,75 C420,40 460,70 500,60 L500,140 L0,140 Z"
-                          fill="url(#saleGradient)"
-                        />
-                        <path
-                          d="M0,70 C100,70 150,95 200,85 C250,75 280,110 350,75 C420,40 460,70 500,60"
-                          fill="none"
-                          stroke="#321fdb"
-                          strokeWidth="3.5"
-                          strokeLinecap="round"
-                        />
-                      </svg>
-                    </div>
-                  </div>
-
-                  {/* Stat Counters below chart */}
-                  <div className="row g-3 pt-3 border-top">
-                    <div className="col-6">
-                      <div className="d-flex align-items-center gap-2">
-                        <div className="flex-grow-1">
-                          <span className="text-muted small d-block">Customers</span>
-                          <span className="fw-bold fs-5 text-dark">44.725</span>
-                          <span className="text-danger small ms-1" style={{ fontSize: '11px' }}>(-12.4% ↓)</span>
-                        </div>
-                        <div className="bg-primary-subtle p-2 rounded text-primary">
-                          <i className="bi bi-people-fill fs-5"></i>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="col-6">
-                      <div className="d-flex align-items-center gap-2">
-                        <div className="flex-grow-1">
-                          <span className="text-muted small d-block">Orders</span>
-                          <span className="fw-bold fs-5 text-dark">385</span>
-                          <span className="text-success small ms-1" style={{ fontSize: '11px' }}>(17.2% ↑)</span>
-                        </div>
-                        <div className="bg-info-subtle p-2 rounded text-info">
-                          <i className="bi bi-cart-fill fs-5"></i>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
+          {/* CoolAdmin Page Header */}
+          <div className="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+            <div>
+              <h3 className="fw-bold text-dark mb-1">Dashboard Quản Trị</h3>
+              <p className="text-muted small mb-0">
+                Hệ thống quản lý chuỗi bán lẻ thiết bị di động TECH-MART tích hợp kiến trúc Microservices Spring Boot & Next.js.
+              </p>
             </div>
 
-            {/* Card 2: Traffic Bar Chart */}
-            <div className="col-12 col-lg-5">
-              <div className="card border-0 shadow-sm rounded-3 h-100 bg-white">
-                <div className="card-body p-4 d-flex flex-column justify-content-between">
-                  <div className="mb-2">
-                    <h5 className="fw-bold text-dark mb-0">Traffic</h5>
-                    <small className="text-muted">January 01, 2026 - December 31, 2026</small>
-                  </div>
-
-                  {/* 12 Months Bar Chart */}
-                  <div className="d-flex align-items-end justify-content-between gap-1 my-3" style={{ height: '140px' }}>
-                    {[
-                      { m: 'Jan', h: 65 },
-                      { m: 'Feb', h: 68 },
-                      { m: 'Mar', h: 67 },
-                      { m: 'Apr', h: 35 },
-                      { m: 'May', h: 32 },
-                      { m: 'Jun', h: 18 },
-                      { m: 'Jul', h: 42 },
-                      { m: 'Aug', h: 70 },
-                      { m: 'Sep', h: 50 },
-                      { m: 'Oct', h: 22 },
-                      { m: 'Nov', h: 12 },
-                      { m: 'Dec', h: 95 },
-                    ].map((b, idx) => (
-                      <div key={idx} className="d-flex flex-column align-items-center flex-grow-1" style={{ height: '100%' }}>
-                        <div className="w-100 d-flex align-items-end flex-grow-1">
-                          <div
-                            className="w-100 rounded-top"
-                            style={{
-                              height: `${b.h}%`,
-                              backgroundColor: '#321fdb',
-                              transition: 'height 0.4s ease',
-                            }}
-                          ></div>
-                        </div>
-                        <span className="text-muted mt-2" style={{ fontSize: '9px' }}>{b.m}</span>
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="pt-3 border-top d-flex justify-content-between align-items-center small text-muted">
-                    <span><i className="bi bi-circle-fill text-primary me-1" style={{ fontSize: '8px' }}></i>Tổng lượt truy cập</span>
-                    <span className="fw-semibold text-dark">297.324 Users</span>
-                  </div>
-                </div>
-              </div>
+            <div className="d-flex align-items-center gap-2">
+              <button
+                onClick={handleExportCSV}
+                className="btn btn-white btn-sm bg-white border text-secondary shadow-sm rounded-2 px-3 fw-semibold"
+                title="Xuất dữ liệu bảng ra file CSV"
+              >
+                <i className="bi bi-download me-1 text-primary"></i>Xuất Excel / CSV
+              </button>
+              <button
+                onClick={handleResetData}
+                className="btn btn-white btn-sm bg-white border text-secondary shadow-sm rounded-2 px-3"
+                title="Khôi phục dữ liệu ban đầu"
+              >
+                <i className="bi bi-arrow-counterclockwise me-1"></i>Làm mới mẫu
+              </button>
+              <button
+                onClick={handleOpenAdd}
+                className="btn btn-primary btn-sm rounded-2 px-3 fw-semibold shadow-sm d-flex align-items-center gap-1"
+              >
+                <i className="bi bi-plus-lg"></i>
+                <span>+ Thêm thiết bị mới</span>
+              </button>
             </div>
           </div>
 
-          {/* ================= 4. BOTTOM ROW: CRUD TABLE & COLORFUL CARDS ================= */}
-          <div className="row g-4">
-            {/* Table Users & Thiết Bị Chuỗi (CÓ ĐẦY ĐỦ CRUD) */}
-            <div className="col-12 col-xl-8" id="crudTable">
-              <div className="card border-0 shadow-sm rounded-3 bg-white">
-                <div className="card-header bg-white py-3 border-bottom d-flex flex-wrap justify-content-between align-items-center gap-2">
-                  <div>
-                    <h5 className="fw-bold text-dark mb-0">Users & Thiết Bị Chuỗi</h5>
-                    <small className="text-muted">1,232,150 registered users - Quản lý chuỗi chi nhánh</small>
-                  </div>
-                  <button
-                    onClick={handleOpenAdd}
-                    className="btn btn-outline-dark btn-sm rounded-2 px-3 fw-semibold shadow-sm d-flex align-items-center gap-1"
+          {/* ================= 3. KPI CARDS STRIP ================= */}
+          <div className="row g-3 mb-4">
+            {/* Card 1: Tổng Doanh Thu Tồn Kho */}
+            <div className="col-12 col-sm-6 col-xl-3">
+              <div className="card border-0 shadow-sm rounded-3 p-3 bg-white h-100">
+                <div className="d-flex justify-content-between align-items-center mb-2">
+                  <span className="text-muted small fw-semibold text-uppercase">Giá Trị Tồn Kho Chuỗi</span>
+                  <div
+                    className="rounded-3 d-flex align-items-center justify-content-center text-primary"
+                    style={{ width: '40px', height: '40px', backgroundColor: '#eef2ff' }}
                   >
-                    <i className="bi bi-plus-lg text-primary"></i>
-                    <span>+ Add new user / Thiết bị</span>
-                  </button>
+                    <i className="bi bi-currency-dollar fs-5"></i>
+                  </div>
                 </div>
-
-                <div className="table-responsive">
-                  <table className="table table-hover align-middle mb-0">
-                    <thead className="table-light text-uppercase small text-muted" style={{ fontSize: '11px', letterSpacing: '0.5px' }}>
-                      <tr>
-                        <th className="ps-4">Quản lý & Thiết Bị</th>
-                        <th>Country</th>
-                        <th>Usage / Tồn Kho</th>
-                        <th>Activity</th>
-                        <th className="text-center pe-4" style={{ width: '140px' }}>Thao tác (CRUD)</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {filteredItems.length === 0 ? (
-                        <tr>
-                          <td colSpan="5" className="text-center py-4 text-muted">
-                            <i className="bi bi-inbox fs-3 d-block mb-1"></i>
-                            Không tìm thấy thiết bị phù hợp với từ khóa!
-                          </td>
-                        </tr>
-                      ) : (
-                        filteredItems.map((item) => (
-                          <tr key={item.id}>
-                            {/* Cột 1: User & Thiết Bị với Avatar Initials chuyên nghiệp */}
-                            <td className="ps-4">
-                              <div className="d-flex align-items-center gap-3">
-                                <div
-                                  className={`rounded-circle d-flex align-items-center justify-content-center fw-bold shadow-sm ${item.badgeColor || 'bg-primary text-white'}`}
-                                  style={{ width: '40px', height: '40px', fontSize: '14px', flexShrink: 0 }}
-                                >
-                                  {item.initials || getInitials(item.user)}
-                                </div>
-                                <div>
-                                  <div className="fw-bold text-dark small">{item.user}</div>
-                                  <div className="small text-primary fw-semibold">
-                                    {item.name} · {Number(item.price).toLocaleString('vi-VN')}₫
-                                  </div>
-                                </div>
-                              </div>
-                            </td>
-
-                            {/* Cột 2: Country & Chi nhánh */}
-                            <td>
-                              <div className="fw-bold small text-dark">{item.country}</div>
-                              <div className="text-muted small" style={{ fontSize: '11px' }}>{item.branch}</div>
-                            </td>
-
-                            {/* Cột 3: Usage / Tồn Kho */}
-                            <td>
-                              <div className="d-flex justify-content-between align-items-center mb-1" style={{ fontSize: '11px' }}>
-                                <span className="fw-bold text-dark">{item.usage}%</span>
-                                <span className="text-muted">Kho: {item.stock} máy</span>
-                              </div>
-                              <div className="progress" style={{ height: '4px' }}>
-                                <div
-                                  className={`progress-bar ${
-                                    item.usage > 70 ? 'bg-success' : item.usage > 40 ? 'bg-info' : 'bg-warning'
-                                  }`}
-                                  style={{ width: `${item.usage}%` }}
-                                ></div>
-                              </div>
-                            </td>
-
-                            {/* Cột 4: Activity */}
-                            <td>
-                              <div className="text-muted small" style={{ fontSize: '11px' }}>Last login</div>
-                              <div className="small text-dark fw-semibold">{item.activity}</div>
-                            </td>
-
-                            {/* Cột 5: THAO TÁC CRUD (SỬA & XÓA) */}
-                            <td className="text-center pe-4">
-                              <div className="btn-group btn-group-sm">
-                                <button
-                                  onClick={() => handleOpenEdit(item)}
-                                  className="btn btn-outline-primary"
-                                  title="Chỉnh sửa thiết bị"
-                                >
-                                  <i className="bi bi-pencil me-1"></i>Sửa
-                                </button>
-                                <button
-                                  onClick={() => handleDelete(item.id, item.name)}
-                                  className="btn btn-outline-danger"
-                                  title="Xóa khỏi hệ thống"
-                                >
-                                  <i className="bi bi-trash me-1"></i>Xóa
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        ))
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-
-                <div className="card-footer bg-white py-3 border-top d-flex justify-content-between align-items-center small text-muted">
-                  <span>Hiển thị <strong>{filteredItems.length}</strong> thiết bị trong cơ sở dữ liệu</span>
+                <h4 className="fw-bold text-dark mb-1">
+                  {(totalInventoryValue / 1000000).toLocaleString('vi-VN', { maximumFractionDigits: 1 })} Tr ₫
+                </h4>
+                <div className="d-flex justify-content-between align-items-center small">
                   <span className="text-success fw-semibold">
-                    <i className="bi bi-check-all me-1"></i>Microservices Live Demo Sẵn Sàng
+                    <i className="bi bi-arrow-up-short"></i>+14.8%
+                  </span>
+                  <span className="text-muted" style={{ fontSize: '11px' }}>Tổng: {totalStock} máy sẵn sàng</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Card 2: Đơn Hàng Hôm Nay */}
+            <div className="col-12 col-sm-6 col-xl-3">
+              <div className="card border-0 shadow-sm rounded-3 p-3 bg-white h-100">
+                <div className="d-flex justify-content-between align-items-center mb-2">
+                  <span className="text-muted small fw-semibold text-uppercase">Đơn Hàng Hôm Nay</span>
+                  <div
+                    className="rounded-3 d-flex align-items-center justify-content-center text-success"
+                    style={{ width: '40px', height: '40px', backgroundColor: '#ecfdf5' }}
+                  >
+                    <i className="bi bi-bag-check fs-5"></i>
+                  </div>
+                </div>
+                <h4 className="fw-bold text-dark mb-1">1.284 Đơn</h4>
+                <div className="d-flex justify-content-between align-items-center small">
+                  <span className="text-success fw-semibold">
+                    <i className="bi bi-arrow-up-short"></i>+8.2%
+                  </span>
+                  <span className="text-muted" style={{ fontSize: '11px' }}>1.210 đơn thành công</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Card 3: Tương Tác AI */}
+            <div className="col-12 col-sm-6 col-xl-3">
+              <div className="card border-0 shadow-sm rounded-3 p-3 bg-white h-100">
+                <div className="d-flex justify-content-between align-items-center mb-2">
+                  <span className="text-muted small fw-semibold text-uppercase">Tương Tác Trợ Lý AI</span>
+                  <div
+                    className="rounded-3 d-flex align-items-center justify-content-center text-info"
+                    style={{ width: '40px', height: '40px', backgroundColor: '#e0f2fe' }}
+                  >
+                    <i className="bi bi-robot fs-5"></i>
+                  </div>
+                </div>
+                <h4 className="fw-bold text-dark mb-1">8.492 Lượt</h4>
+                <div className="d-flex justify-content-between align-items-center small">
+                  <span className="text-success fw-semibold">
+                    <i className="bi bi-arrow-up-short"></i>+15.8%
+                  </span>
+                  <span className="text-muted" style={{ fontSize: '11px' }}>Tỉ lệ chốt đơn: 34%</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Card 4: Cảnh Báo Tồn Kho */}
+            <div className="col-12 col-sm-6 col-xl-3">
+              <div className="card border-0 shadow-sm rounded-3 p-3 bg-white h-100">
+                <div className="d-flex justify-content-between align-items-center mb-2">
+                  <span className="text-muted small fw-semibold text-uppercase">Cảnh Báo Tồn Kho</span>
+                  <div
+                    className="rounded-3 d-flex align-items-center justify-content-center text-warning"
+                    style={{ width: '40px', height: '40px', backgroundColor: '#fffbeb' }}
+                  >
+                    <i className="bi bi-exclamation-triangle fs-5"></i>
+                  </div>
+                </div>
+                <h4 className="fw-bold text-dark mb-1">{lowStockCount} Thiết bị</h4>
+                <div className="d-flex justify-content-between align-items-center small">
+                  <span className="text-danger fw-semibold">
+                    <i className="bi bi-box-seam me-1"></i>Tồn kho &le; 5 máy
+                  </span>
+                  <span className="text-muted" style={{ fontSize: '11px' }}>Cần luân chuyển hàng</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* ================= 4. REVENUE TREND CHART & RECENT ACTIVITY ================= */}
+          <div className="row g-3 mb-4" id="activitySection">
+            {/* Revenue Trend SVG Chart */}
+            <div className="col-12 col-lg-8">
+              <div className="card border-0 shadow-sm rounded-3 bg-white h-100">
+                <div className="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                  <div>
+                    <h5 className="fw-bold text-dark mb-0">Xu Hướng Doanh Thu Bán Lẻ (Revenue Trend)</h5>
+                    <small className="text-muted">Doanh thu thiết bị di động, laptop & máy tính bảng 30 ngày qua</small>
+                  </div>
+                  <span className="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1">
+                    Tháng 11 / 2026
                   </span>
                 </div>
-              </div>
-            </div>
-
-            {/* Cột phải: 2 Colorful Cards (26K Users & 2.49% Conversion) */}
-            <div className="col-12 col-xl-4 d-flex flex-column gap-4">
-              {/* Blue Card: 26K Users */}
-              <div className="card border-0 shadow-sm rounded-3 text-white position-relative overflow-hidden" style={{ backgroundColor: '#321fdb' }}>
                 <div className="card-body p-4">
-                  <div className="d-flex justify-content-between align-items-start mb-2">
-                    <div>
-                      <h3 className="fw-bold mb-1">
-                        26K <span className="small opacity-75 fw-normal" style={{ fontSize: '13px' }}>(-12.4% ↓)</span>
-                      </h3>
-                      <span className="small opacity-75">Users</span>
-                    </div>
-                    <button className="btn btn-link text-white-50 p-0 text-decoration-none">
-                      <i className="bi bi-three-dots-vertical fs-5"></i>
-                    </button>
-                  </div>
-
-                  {/* Sparkline Wave */}
-                  <div style={{ height: '70px', width: '100%' }}>
-                    <svg viewBox="0 0 200 70" preserveAspectRatio="none" style={{ width: '100%', height: '100%' }}>
+                  {/* SVG Line Wave Chart */}
+                  <div style={{ height: '190px', width: '100%' }}>
+                    <svg viewBox="0 0 600 190" preserveAspectRatio="none" style={{ width: '100%', height: '100%' }}>
+                      <defs>
+                        <linearGradient id="coolGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                          <stop offset="0%" stopColor="#4272d7" stopOpacity="0.25" />
+                          <stop offset="100%" stopColor="#4272d7" stopOpacity="0.0" />
+                        </linearGradient>
+                      </defs>
                       <path
-                        d="M0,50 Q40,65 70,40 T140,25 T200,45"
+                        d="M0,120 C80,110 140,60 200,80 C260,100 320,35 380,55 C440,75 500,20 600,40 L600,190 L0,190 Z"
+                        fill="url(#coolGradient)"
+                      />
+                      <path
+                        d="M0,120 C80,110 140,60 200,80 C260,100 320,35 380,55 C440,75 500,20 600,40"
                         fill="none"
-                        stroke="rgba(255,255,255,0.7)"
-                        strokeWidth="2.5"
+                        stroke="#4272d7"
+                        strokeWidth="3.5"
+                        strokeLinecap="round"
                       />
                     </svg>
                   </div>
+                  <div className="d-flex justify-content-between text-muted small mt-2 pt-2 border-top">
+                    <span>Tuần 1: 85.000.000₫</span>
+                    <span>Tuần 2: 112.500.000₫</span>
+                    <span>Tuần 3: 104.000.000₫</span>
+                    <span className="text-primary fw-bold">Tuần 4: 127.000.000₫</span>
+                  </div>
                 </div>
               </div>
+            </div>
 
-              {/* Yellow Card: 2.49% Conversion Rate */}
-              <div className="card border-0 shadow-sm rounded-3 text-white position-relative overflow-hidden" style={{ backgroundColor: '#f9b115' }}>
-                <div className="card-body p-4">
-                  <div className="d-flex justify-content-between align-items-start mb-2">
-                    <div>
-                      <h3 className="fw-bold mb-1">
-                        2.49% <span className="small opacity-75 fw-normal" style={{ fontSize: '13px' }}>(84.7% ↑)</span>
-                      </h3>
-                      <span className="small opacity-75">Conversion Rate</span>
+            {/* Recent Activity */}
+            <div className="col-12 col-lg-4">
+              <div className="card border-0 shadow-sm rounded-3 bg-white h-100">
+                <div className="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                  <h5 className="fw-bold text-dark mb-0">Hoạt Động Chi Nhánh</h5>
+                  <span className="badge bg-success-subtle text-success border border-success-subtle">Real-time</span>
+                </div>
+                <div className="card-body p-3">
+                  <div className="d-flex flex-column gap-3">
+                    <div className="d-flex gap-2">
+                      <span className="badge bg-success rounded-circle p-2" style={{ height: 'fit-content' }}>
+                        <i className="bi bi-check2"></i>
+                      </span>
+                      <div>
+                        <div className="small fw-semibold text-dark">Chi nhánh Cầu Giấy xuất 3 iPhone 16 Pro Max</div>
+                        <span className="text-muted" style={{ fontSize: '11px' }}>10 phút trước · Đơn hàng #4287</span>
+                      </div>
                     </div>
-                    <button className="btn btn-link text-white-50 p-0 text-decoration-none">
-                      <i className="bi bi-three-dots-vertical fs-5"></i>
-                    </button>
-                  </div>
 
-                  {/* Sparkline Bars */}
-                  <div className="d-flex align-items-end justify-content-between gap-1 mt-4" style={{ height: '50px' }}>
-                    {[40, 60, 50, 75, 90, 65, 80, 55, 95, 70, 85].map((val, idx) => (
-                      <div
-                        key={idx}
-                        className="rounded-top flex-grow-1"
-                        style={{
-                          height: `${val}%`,
-                          backgroundColor: 'rgba(255,255,255,0.6)',
-                        }}
-                      ></div>
-                    ))}
+                    <div className="d-flex gap-2">
+                      <span className="badge bg-primary rounded-circle p-2" style={{ height: 'fit-content' }}>
+                        <i className="bi bi-box-arrow-in-down"></i>
+                      </span>
+                      <div>
+                        <div className="small fw-semibold text-dark">Nhập kho 15 máy Samsung Galaxy S24 Ultra</div>
+                        <span className="text-muted" style={{ fontSize: '11px' }}>35 phút trước · Chi nhánh Quận 1</span>
+                      </div>
+                    </div>
+
+                    <div className="d-flex gap-2">
+                      <span className="badge bg-info rounded-circle p-2" style={{ height: 'fit-content' }}>
+                        <i className="bi bi-robot"></i>
+                      </span>
+                      <div>
+                        <div className="small fw-semibold text-dark">Khách hàng hỏi tư vấn MacBook qua AI</div>
+                        <span className="text-muted" style={{ fontSize: '11px' }}>1 giờ trước · Đã thêm vào giỏ hàng</span>
+                      </div>
+                    </div>
+
+                    <div className="d-flex gap-2">
+                      <span className="badge bg-warning text-dark rounded-circle p-2" style={{ height: 'fit-content' }}>
+                        <i className="bi bi-exclamation"></i>
+                      </span>
+                      <div>
+                        <div className="small fw-semibold text-dark">iPad Pro M4 sắp hết hàng tại Thái Hà</div>
+                        <span className="text-muted" style={{ fontSize: '11px' }}>2 giờ trước · Còn 3 máy trong kho</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
           </div>
+
+          {/* ================= 5. COOLADMIN DATA TABLE (CRUD) ================= */}
+          <div className="card border-0 shadow-sm rounded-3 bg-white mb-4" id="crudTable">
+            <div className="card-header bg-white py-3 border-bottom">
+              <div className="d-flex flex-wrap justify-content-between align-items-center gap-3">
+                <div>
+                  <h5 className="fw-bold text-dark mb-0">
+                    <i className="bi bi-table text-primary me-2"></i>
+                    Bảng Quản Lý Thiết Bị Di Động & Tồn Kho Chi Nhánh
+                  </h5>
+                  <small className="text-muted">Quản lý trực tiếp dữ liệu thiết bị phục vụ Live Demo CRUD</small>
+                </div>
+
+                {/* Filter and Search Bar */}
+                <div className="d-flex flex-wrap align-items-center gap-2">
+                  {/* Category Filter */}
+                  <select
+                    className="form-select form-select-sm"
+                    style={{ width: '135px' }}
+                    value={categoryFilter}
+                    onChange={(e) => setCategoryFilter(e.target.value)}
+                  >
+                    <option value="ALL">Tất cả ngành</option>
+                    <option value="Điện thoại">Điện thoại</option>
+                    <option value="Laptop">Laptop</option>
+                    <option value="Tablet">Tablet</option>
+                    <option value="Phụ kiện">Phụ kiện</option>
+                  </select>
+
+                  {/* Branch Filter */}
+                  <select
+                    className="form-select form-select-sm"
+                    style={{ width: '135px' }}
+                    value={branchFilter}
+                    onChange={(e) => setBranchFilter(e.target.value)}
+                  >
+                    <option value="ALL">Tất cả chi nhánh</option>
+                    <option value="Hà Nội">Hà Nội</option>
+                    <option value="TP.HCM">TP.HCM</option>
+                    <option value="Đà Nẵng">Đà Nẵng</option>
+                    <option value="Cần Thơ">Cần Thơ</option>
+                  </select>
+
+                  {/* Sort By */}
+                  <select
+                    className="form-select form-select-sm"
+                    style={{ width: '140px' }}
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value)}
+                  >
+                    <option value="DEFAULT">Sắp xếp: Mặc định</option>
+                    <option value="PRICE_DESC">Giá cao &rarr; thấp</option>
+                    <option value="PRICE_ASC">Giá thấp &rarr; cao</option>
+                    <option value="STOCK_ASC">Tồn kho ít &rarr; nhiều</option>
+                    <option value="STOCK_DESC">Tồn kho nhiều &rarr; ít</option>
+                  </select>
+
+                  {/* Search box */}
+                  <div className="input-group input-group-sm" style={{ width: '220px' }}>
+                    <span className="input-group-text bg-white">
+                      <i className="bi bi-search"></i>
+                    </span>
+                    <input
+                      type="text"
+                      className="form-control"
+                      placeholder="Tìm kiếm thiết bị..."
+                      value={searchKeyword}
+                      onChange={(e) => setSearchKeyword(e.target.value)}
+                    />
+                  </div>
+
+                  <button
+                    onClick={handleOpenAdd}
+                    className="btn btn-primary btn-sm rounded-2 px-3 fw-semibold shadow-sm"
+                  >
+                    <i className="bi bi-plus-lg me-1"></i>Thêm Mới
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className="table-responsive">
+              <table className="table table-hover align-middle mb-0">
+                <thead className="table-light text-uppercase small text-muted" style={{ fontSize: '11.5px', letterSpacing: '0.4px' }}>
+                  <tr>
+                    <th className="ps-4">Mã SP</th>
+                    <th>Thiết Bị & Dòng Máy</th>
+                    <th>Ngành Hàng</th>
+                    <th>Chi Nhánh Tiếp Nhận</th>
+                    <th>Đơn Giá Niêm Yết</th>
+                    <th>Tồn Kho</th>
+                    <th>Trạng Thái</th>
+                    <th className="text-center pe-4" style={{ width: '150px' }}>Thao tác (CRUD)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredProducts.length === 0 ? (
+                    <tr>
+                      <td colSpan="8" className="text-center py-4 text-muted">
+                        <i className="bi bi-inbox fs-3 d-block mb-1"></i>
+                        Không tìm thấy thiết bị nào phù hợp với bộ lọc!
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredProducts.map((p) => (
+                      <tr key={p.id}>
+                        <td className="ps-4">
+                          <span className="badge bg-light text-dark border font-monospace">{p.id}</span>
+                        </td>
+                        <td>
+                          <div className="fw-bold text-dark">{p.name}</div>
+                          {p.description && (
+                            <small className="text-muted d-block text-truncate" style={{ maxWidth: '320px' }}>
+                              {p.description}
+                            </small>
+                          )}
+                        </td>
+                        <td>
+                          <span className="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1">
+                            {p.category}
+                          </span>
+                        </td>
+                        <td>
+                          <i className="bi bi-geo-alt text-danger me-1"></i>
+                          <span className="small text-secondary">{p.branch}</span>
+                        </td>
+                        <td>
+                          <span className="fw-bold text-danger">
+                            {Number(p.price).toLocaleString('vi-VN')} ₫
+                          </span>
+                        </td>
+                        <td>
+                          <span className="fw-semibold text-dark">{p.stock} máy</span>
+                        </td>
+                        <td>
+                          {p.stock === 0 ? (
+                            <span className="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1">
+                              ● Hết hàng
+                            </span>
+                          ) : p.stock <= 5 ? (
+                            <span className="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle px-2 py-1">
+                              ● Sắp hết ({p.stock})
+                            </span>
+                          ) : (
+                            <span className="badge bg-success-subtle text-success border border-success-subtle px-2 py-1">
+                              ● Còn hàng
+                            </span>
+                          )}
+                        </td>
+                        <td className="text-center pe-4">
+                          <div className="btn-group btn-group-sm">
+                            <button
+                              onClick={() => handleOpenEdit(p)}
+                              className="btn btn-outline-primary"
+                              title="Chỉnh sửa thiết bị"
+                            >
+                              <i className="bi bi-pencil me-1"></i>Sửa
+                            </button>
+                            <button
+                              onClick={() => handleDelete(p.id, p.name)}
+                              className="btn btn-outline-danger"
+                              title="Xóa khỏi hệ thống"
+                            >
+                              <i className="bi bi-trash me-1"></i>Xóa
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="card-footer bg-white py-3 border-top d-flex justify-content-between align-items-center small text-muted">
+              <span>Hiển thị <strong>{filteredProducts.length}</strong> trên tổng số <strong>{products.length}</strong> thiết bị</span>
+              <span className="text-success fw-semibold">
+              </span>
+            </div>
+          </div>
+
+
         </main>
       </div>
 
-      {/* ================= 5. MODAL THÊM / SỬA THIẾT BỊ (CRUD MODAL) ================= */}
+      {/* ================= 7. MODAL THÊM / SỬA THIẾT BỊ (CRUD MODAL) ================= */}
       {showModal && (
         <div
           className="modal fade show d-block"
@@ -880,7 +975,7 @@ export default function AdminDashboard() {
               <div className="modal-header bg-light py-3">
                 <h5 className="modal-title fw-bold text-dark d-flex align-items-center">
                   <i className={`bi ${isEditing ? 'bi-pencil-square text-primary' : 'bi-plus-circle-fill text-success'} me-2`}></i>
-                  {isEditing ? `Chỉnh Sửa Thiết Bị [${currentEditId}]` : 'Thêm Mới Thiết Bị / User'}
+                  {isEditing ? `Chỉnh Sửa Thiết Bị [${currentEditId}]` : 'Nhập Liệu Thiết Bị Mới (CoolAdmin)'}
                 </h5>
                 <button
                   type="button"
@@ -891,21 +986,6 @@ export default function AdminDashboard() {
 
               <form noValidate className={validated ? 'was-validated' : ''} onSubmit={handleSubmitForm}>
                 <div className="modal-body p-4">
-                  <div className="mb-3">
-                    <label className="form-label fw-semibold small">
-                      Tên người quản lý / Phụ trách <span className="text-danger">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      placeholder="VD: Nguyễn Văn An"
-                      required
-                      value={formData.user}
-                      onChange={(e) => setFormData({ ...formData, user: e.target.value })}
-                    />
-                    <div className="invalid-feedback">Vui lòng nhập tên người dùng.</div>
-                  </div>
-
                   <div className="mb-3">
                     <label className="form-label fw-semibold small">
                       Tên thiết bị điện tử <span className="text-danger">*</span>
@@ -919,6 +999,43 @@ export default function AdminDashboard() {
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     />
                     <div className="invalid-feedback">Vui lòng nhập tên thiết bị.</div>
+                  </div>
+
+                  <div className="row g-2 mb-3">
+                    <div className="col-6">
+                      <label className="form-label fw-semibold small">
+                        Ngành hàng <span className="text-danger">*</span>
+                      </label>
+                      <select
+                        className="form-select"
+                        required
+                        value={formData.category}
+                        onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                      >
+                        <option value="Điện thoại">Điện thoại di động</option>
+                        <option value="Laptop">Laptop / Máy tính xách tay</option>
+                        <option value="Tablet">Máy tính bảng (iPad/Tablet)</option>
+                        <option value="Phụ kiện">Tai nghe & Phụ kiện</option>
+                      </select>
+                    </div>
+
+                    <div className="col-6">
+                      <label className="form-label fw-semibold small">
+                        Chi nhánh phân phối <span className="text-danger">*</span>
+                      </label>
+                      <select
+                        className="form-select"
+                        required
+                        value={formData.branch}
+                        onChange={(e) => setFormData({ ...formData, branch: e.target.value })}
+                      >
+                        <option value="Hà Nội (Cầu Giấy)">Hà Nội (Cầu Giấy)</option>
+                        <option value="TP.HCM (Quận 1)">TP.HCM (Quận 1)</option>
+                        <option value="Đà Nẵng (Hải Châu)">Đà Nẵng (Hải Châu)</option>
+                        <option value="Hà Nội (Thái Hà)">Hà Nội (Thái Hà)</option>
+                        <option value="Cần Thơ (Ninh Kiều)">Cần Thơ (Ninh Kiều)</option>
+                      </select>
+                    </div>
                   </div>
 
                   <div className="row g-2 mb-3">
@@ -945,7 +1062,7 @@ export default function AdminDashboard() {
                         type="number"
                         className="form-control"
                         min="1"
-                        placeholder="10"
+                        placeholder="20"
                         required
                         value={formData.stock}
                         onChange={(e) => setFormData({ ...formData, stock: e.target.value })}
@@ -956,35 +1073,15 @@ export default function AdminDashboard() {
 
                   <div className="mb-3">
                     <label className="form-label fw-semibold small">
-                      Chi nhánh phân phối <span className="text-danger">*</span>
+                      Mô tả thông số kỹ thuật & Tính năng AI
                     </label>
-                    <select
-                      className="form-select"
-                      required
-                      value={formData.branch}
-                      onChange={(e) => setFormData({ ...formData, branch: e.target.value })}
-                    >
-                      <option value="Hà Nội (Cầu Giấy)">Hà Nội (Cầu Giấy)</option>
-                      <option value="TP.HCM (Quận 1)">TP.HCM (Quận 1)</option>
-                      <option value="Đà Nẵng (Hải Châu)">Đà Nẵng (Hải Châu)</option>
-                      <option value="Hà Nội (Thái Hà)">Hà Nội (Thái Hà)</option>
-                      <option value="Cần Thơ (Ninh Kiều)">Cần Thơ (Ninh Kiều)</option>
-                    </select>
-                  </div>
-
-                  <div className="mb-3">
-                    <label className="form-label fw-semibold small d-flex justify-content-between">
-                      <span>Mức độ đáp ứng / Usage</span>
-                      <span className="text-primary fw-bold">{formData.usage}%</span>
-                    </label>
-                    <input
-                      type="range"
-                      className="form-range"
-                      min="10"
-                      max="100"
-                      value={formData.usage}
-                      onChange={(e) => setFormData({ ...formData, usage: e.target.value })}
-                    />
+                    <textarea
+                      className="form-control"
+                      rows="2"
+                      placeholder="VD: Chip Snapdragon 8 Gen 3, Camera Leica, hỗ trợ AI dịch thuật..."
+                      value={formData.description}
+                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    ></textarea>
                   </div>
                 </div>
 
@@ -996,7 +1093,7 @@ export default function AdminDashboard() {
                   >
                     Hủy bỏ
                   </button>
-                  <button type="submit" className="btn btn-primary btn-sm px-4 fw-bold">
+                  <button type="submit" className="btn btn-primary btn-sm px-4 fw-bold shadow-sm">
                     <i className="bi bi-check-lg me-1"></i>
                     {isEditing ? 'Cập Nhật Thiết Bị' : 'Lưu Thiết Bị'}
                   </button>
