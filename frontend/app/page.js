@@ -2,9 +2,11 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import { readCart } from './lib/cart';
 
 export default function Home() {
   const [currentUser, setCurrentUser] = useState(null);
+  const [cartCount, setCartCount] = useState(0);
   const [chatOpen, setChatOpen] = useState(false);
   const [chatInput, setChatInput] = useState('');
   const [messages, setMessages] = useState([
@@ -14,6 +16,16 @@ export default function Home() {
     }
   ]);
 
+  useEffect(() => {
+    const updateCount = () => setCartCount(readCart().reduce((sum, item) => sum + item.quantity, 0));
+    updateCount();
+    window.addEventListener('cart-updated', updateCount);
+    window.addEventListener('storage', updateCount);
+    return () => {
+      window.removeEventListener('cart-updated', updateCount);
+      window.removeEventListener('storage', updateCount);
+    };
+  }, []);
   // Đọc thông tin đăng nhập từ localStorage (Chỉ dành cho khách hàng)
   useEffect(() => {
     const savedUser = localStorage.getItem('currentUser');
@@ -153,11 +165,11 @@ export default function Home() {
                 </div>
               )}
 
-              <button className="hact cart ms-2 text-white" type="button" aria-label="Giỏ hàng">
+              <Link href="/cart" className="hact cart ms-2 text-white text-decoration-none" aria-label="Giỏ hàng">
                 <i className="bi bi-cart3 fs-4 text-white"></i>
                 <span className="hact-txt text-white">Giỏ hàng</span>
-                <span className="count bg-warning text-dark">3</span>
-              </button>
+                <span className="count bg-warning text-dark">{cartCount}</span>
+              </Link>
             </div>
           </div>
         </div>
@@ -604,3 +616,5 @@ export default function Home() {
     </>
   );
 }
+
+

@@ -115,3 +115,37 @@ h1, h2, h3, h4, h5, h6 {
 .badge.bg-danger {
   background-color: var(--cps-red) !important;
 }
+
+/* Tăng khả năng đọc trên toàn bộ giao diện */
+body {
+  font-size: 17px !important;
+  line-height: 1.55;
+}
+
+.small,
+small,
+.form-text {
+  font-size: 0.95rem !important;
+}
+
+.btn-sm,
+.form-control,
+.form-select,
+.input-group-sm > .form-control,
+.input-group-sm > .form-select,
+.input-group-sm > .input-group-text {
+  font-size: 1rem !important;
+}
+
+/* Một số trang đặt cỡ chữ nhỏ trực tiếp trong JSX; nâng các nhãn đó đồng bộ. */
+[style*="font-size: 10px"],
+[style*="font-size: 11px"],
+[style*="font-size: 12px"],
+[style*="font-size: 13px"],
+[style*="font-size: 14px"] {
+  font-size: 15px !important;
+}
+
+[style*="font-size: 15px"] {
+  font-size: 17px !important;
+}
