@@ -18,19 +18,27 @@ export default function RegisterPage() {
 
   const [passwordMismatch, setPasswordMismatch] = useState(false);
   const [successMsg, setSuccessMsg] = useState(false);
+  const [serverError, setServerError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleRegister = (e) => {
+  const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+  const handleRegister = async (e) => {
     e.preventDefault();
+
     const form = e.currentTarget;
 
-    // Kiểm tra khớp mật khẩu
+    setServerError('');
+    setFieldErrors({});
+    setSuccessMsg(false);
+
     if (formData.password !== formData.confirmPassword) {
       setPasswordMismatch(true);
       setValidated(true);
       return;
-    } else {
-      setPasswordMismatch(false);
     }
+
+    setPasswordMismatch(false);
 
     if (!form.checkValidity()) {
       e.stopPropagation();
@@ -39,22 +47,42 @@ export default function RegisterPage() {
     }
 
     setValidated(true);
+    setIsSubmitting(true);
 
-    // Lưu người dùng mới vào hệ thống (giả lập lưu DB / Microservice)
-    const newUser = {
-      name: formData.fullName,
-      email: formData.email,
-      phone: formData.phone,
-      role: 'CUSTOMER',
-    };
+    try {
+      const response = await fetch(`${apiBaseUrl}/api/auth/register`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          fullName: formData.fullName,
+          phone: formData.phone,
+          email: formData.email,
+          password: formData.password,
+        }),
+      });
 
-    localStorage.setItem('currentUser', JSON.stringify(newUser));
-    setSuccessMsg(true);
+      const data = await response.json();
 
-    // Tự động chuyển hướng về trang chủ sau 1.5 giây
-    setTimeout(() => {
-      router.push('/');
-    }, 1500);
+      if (!response.ok) {
+        setServerError(data.message || 'Đăng ký tài khoản thất bại.');
+        setFieldErrors(data.fieldErrors || {});
+        return;
+      }
+
+      setSuccessMsg(true);
+
+      setTimeout(() => {
+        router.push('/login');
+      }, 1500);
+    } catch (error) {
+      setServerError(
+          'Không thể kết nối đến máy chủ. Vui lòng kiểm tra lại các service.'
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -77,10 +105,24 @@ export default function RegisterPage() {
           <h5 className="fw-bold text-center mb-3 text-dark">Đăng Ký Tài Khoản Mới</h5>
 
           {successMsg && (
-            <div className="alert alert-success alert-dismissible fade show small" role="alert">
-              <i className="bi bi-check-circle-fill me-2"></i>
-              <strong>Đăng ký thành công!</strong> Đang tự động đăng nhập và chuyển hướng về trang chủ...
-            </div>
+              <div className="alert alert-success small" role="alert">
+                <i className="bi bi-check-circle-fill me-2"></i>
+                <strong>Đăng ký thành công!</strong> Đang chuyển đến trang đăng nhập...
+              </div>
+          )}
+          {serverError && (
+              <div className="alert alert-danger small" role="alert">
+                <i className="bi bi-exclamation-triangle-fill me-2"></i>
+                <strong>{serverError}</strong>
+
+                {Object.keys(fieldErrors).length > 0 && (
+                    <ul className="mb-0 mt-2">
+                      {Object.entries(fieldErrors).map(([field, message]) => (
+                          <li key={field}>{message}</li>
+                      ))}
+                    </ul>
+                )}
+              </div>
           )}
 
           {passwordMismatch && (
@@ -215,8 +257,25 @@ export default function RegisterPage() {
               <div className="invalid-feedback">Bạn cần đồng ý với điều khoản để tiếp tục.</div>
             </div>
 
-            <button type="submit" className="btn btn-primary w-100 py-2 fw-bold shadow-sm">
-              <i className="bi bi-person-plus me-1"></i>Đăng Ký Tài Khoản
+            <button
+                type="submit"
+                className="btn btn-primary w-100 py-2 fw-bold shadow-sm"
+                disabled={isSubmitting}
+            >
+              {isSubmitting ? (
+                  <>
+                    <span
+                      className="spinner-border spinner-border-sm me-2"
+                      aria-hidden="true"
+                    ></span>
+                    Đang đăng ký...
+                  </>
+              ) : (
+                  <>
+                    <i className="bi bi-person-plus me-1"></i>
+                    Đăng Ký Tài Khoản
+                  </>
+              )}
             </button>
           </form>
 
