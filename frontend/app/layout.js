@@ -1,5 +1,6 @@
 import "./globals.css";
 import Script from "next/script";
+import ChatWidget from "@/components/chat/ChatWidget";
 
 export const metadata = {
   title: "TECH-MART | Hệ thống chuỗi bán lẻ thiết bị di động chính hãng",
@@ -26,7 +27,7 @@ export default function RootLayout({ children }) {
 
       <body>
         {children}
-
+        <ChatWidget /> {/* THÊM */}
         {/* Scripts hỗ trợ tương tác Bootstrap & Bazaar */}
         <Script src="/bazaar/js/vendor/bootstrap.bundle.min.js" strategy="afterInteractive" />
         <Script src="/bazaar/js/main.js" strategy="lazyOnload" />
