@@ -10,7 +10,7 @@ export default function AdminDashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
-  // Tab điều hướng: 'products' (chính), 'categories', 'brands'
+  // Tab điều hướng: 'products' (chính), 'categories', 'brands', 'users'
   const [activeTab, setActiveTab] = useState('products');
 
   // ================= 1. DỮ LIỆU BẢNG CATEGORIES (THEO CSDL) =================
@@ -139,9 +139,83 @@ export default function AdminDashboard() {
     },
   ];
 
+  // ================= 4. DỮ LIỆU BẢNG USERS (CHUẨN 100% CSDL IDENTITY) =================
+  const initialUsers = [
+    {
+      id: 1,
+      email: 'admin@techmart.vn',
+      full_name: 'Nguyễn Quản Trị',
+      phone: '0988123456',
+      role: 'ADMIN',
+      status: 'ACTIVE',
+      created_at: '2026-11-01 08:00:00',
+      updated_at: '2026-11-20 10:00:00',
+    },
+    {
+      id: 2,
+      email: 'staff01@techmart.vn',
+      full_name: 'Lê Văn Nhân Viên 1',
+      phone: '0977222333',
+      role: 'STAFF',
+      status: 'ACTIVE',
+      created_at: '2026-11-10 09:15:00',
+      updated_at: '2026-11-21 11:30:00',
+    },
+    {
+      id: 3,
+      email: 'staff02@techmart.vn',
+      full_name: 'Trần Thị Thu Ngân',
+      phone: '0912444555',
+      role: 'STAFF',
+      status: 'ACTIVE',
+      created_at: '2026-11-12 14:30:00',
+      updated_at: '2026-11-22 09:00:00',
+    },
+    {
+      id: 4,
+      email: 'customer01@gmail.com',
+      full_name: 'Hoàng Khách Hàng',
+      phone: '0905888999',
+      role: 'CUSTOMER',
+      status: 'ACTIVE',
+      created_at: '2026-11-15 16:45:00',
+      updated_at: '2026-11-22 10:15:00',
+    },
+    {
+      id: 5,
+      email: 'customer02@gmail.com',
+      full_name: 'Phạm Minh Khôi',
+      phone: '0933777888',
+      role: 'CUSTOMER',
+      status: 'INACTIVE',
+      created_at: '2026-11-16 11:20:00',
+      updated_at: '2026-11-23 15:40:00',
+    },
+  ];
+
   const [categories, setCategories] = useState(initialCategories);
   const [brands, setBrands] = useState(initialBrands);
   const [products, setProducts] = useState(initialProducts);
+  const [users, setUsers] = useState(initialUsers);
+
+  // Bộ lọc & Tìm kiếm Users
+  const [userSearchKeyword, setUserSearchKeyword] = useState('');
+  const [userRoleFilter, setUserRoleFilter] = useState('ALL');
+  const [userStatusFilter, setUserStatusFilter] = useState('ALL');
+
+  // Modal Thêm / Sửa Users
+  const [showUserModal, setShowUserModal] = useState(false);
+  const [isEditingUser, setIsEditingUser] = useState(false);
+  const [currentEditUserId, setCurrentEditUserId] = useState(null);
+  const [userValidated, setUserValidated] = useState(false);
+  const [userFormData, setUserFormData] = useState({
+    email: '',
+    password: '',
+    full_name: '',
+    phone: '',
+    role: 'STAFF',
+    status: 'ACTIVE',
+  });
 
   // Bộ lọc & Tìm kiếm Products
   const [searchKeyword, setSearchKeyword] = useState('');
@@ -619,6 +693,153 @@ export default function AdminDashboard() {
     showAlert('Đã xuất dữ liệu bảng brands thành công (file CSV)!', 'success');
   };
 
+  // ================= D. CRUD USERS (BẢNG USERS & USER_ROLES) =================
+  const handleOpenAddUser = () => {
+    setIsEditingUser(false);
+    setCurrentEditUserId(null);
+    setUserFormData({
+      email: '',
+      password: '',
+      full_name: '',
+      phone: '',
+      role: 'STAFF',
+      status: 'ACTIVE',
+    });
+    setUserValidated(false);
+    setShowUserModal(true);
+  };
+
+  const handleOpenEditUser = (u) => {
+    setIsEditingUser(true);
+    setCurrentEditUserId(u.id);
+    setUserFormData({
+      email: u.email,
+      password: '',
+      full_name: u.full_name,
+      phone: u.phone || '',
+      role: u.role,
+      status: u.status,
+    });
+    setUserValidated(false);
+    setShowUserModal(true);
+  };
+
+  const handleDeleteUser = (userId, email) => {
+    if (userId === 1) {
+      alert('Không thể xóa tài khoản Quản trị viên hệ thống gốc (ID: 1)!');
+      return;
+    }
+    if (confirm(`Bạn có chắc chắn muốn xóa tài khoản [${email}] (ID: ${userId}) khỏi bảng users không?`)) {
+      setUsers((prev) => prev.filter((u) => u.id !== userId));
+      showAlert(`Đã xóa tài khoản [${email}] thành công!`, 'success');
+    }
+  };
+
+  const handleToggleUserStatus = (userId) => {
+    if (userId === 1) {
+      alert('Không thể vô hiệu hóa tài khoản Quản trị viên hệ thống gốc (ID: 1)!');
+      return;
+    }
+    setUsers((prev) =>
+      prev.map((u) => {
+        if (u.id === userId) {
+          const newStatus = u.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
+          showAlert(`Đã đổi trạng thái [${u.email}] sang ${newStatus}!`, 'info');
+          return {
+            ...u,
+            status: newStatus,
+            updated_at: new Date().toISOString().slice(0, 19).replace('T', ' '),
+          };
+        }
+        return u;
+      })
+    );
+  };
+
+  const handleSubmitUser = (e) => {
+    e.preventDefault();
+    const form = e.currentTarget;
+    if (form.checkValidity() === false) {
+      e.stopPropagation();
+      setUserValidated(true);
+      return;
+    }
+
+    const trimmedEmail = userFormData.email.trim();
+    const trimmedFullName = userFormData.full_name.trim();
+
+    // Kiểm tra UNIQUE email trong bảng users
+    const isDuplicateEmail = users.some(
+      (u) => u.email.toLowerCase() === trimmedEmail.toLowerCase() && u.id !== currentEditUserId
+    );
+    if (isDuplicateEmail) {
+      alert(`Lỗi Ràng Buộc UNIQUE: Email "${trimmedEmail}" đã tồn tại trong bảng users!`);
+      return;
+    }
+
+    const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
+
+    if (isEditingUser && currentEditUserId) {
+      setUsers((prev) =>
+        prev.map((u) => {
+          if (u.id === currentEditUserId) {
+            return {
+              ...u,
+              email: trimmedEmail,
+              full_name: trimmedFullName,
+              phone: userFormData.phone.trim(),
+              role: userFormData.role,
+              status: userFormData.status,
+              updated_at: now,
+            };
+          }
+          return u;
+        })
+      );
+      showAlert(`Đã cập nhật thông tin tài khoản [${trimmedEmail}] (ID: ${currentEditUserId}) thành công!`, 'success');
+    } else {
+      const nextId = users.length > 0 ? Math.max(...users.map((u) => u.id)) + 1 : 1;
+      const newUser = {
+        id: nextId,
+        email: trimmedEmail,
+        full_name: trimmedFullName,
+        phone: userFormData.phone.trim(),
+        role: userFormData.role,
+        status: userFormData.status,
+        created_at: now,
+        updated_at: now,
+      };
+      setUsers([newUser, ...users]);
+      showAlert(`Đã thêm mới tài khoản [${trimmedEmail}] (${userFormData.role}) vào bảng users!`, 'success');
+    }
+
+    setShowUserModal(false);
+  };
+
+  const handleExportUserCSV = () => {
+    const headers = ['id', 'email', 'full_name', 'phone', 'role', 'status', 'created_at', 'updated_at'];
+    const rows = filteredUsers.map((u) => [
+      u.id,
+      `"${u.email}"`,
+      `"${u.full_name}"`,
+      `"${u.phone || ''}"`,
+      u.role,
+      u.status,
+      `"${u.created_at}"`,
+      `"${u.updated_at}"`,
+    ]);
+    const csvContent = '\uFEFF' + [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `techmart_users_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    showAlert('Đã xuất dữ liệu bảng users thành công (file CSV)!', 'success');
+  };
+
   // Lọc và sắp xếp Products
   const filteredProducts = useMemo(() => {
     let result = products.filter((p) => {
@@ -665,6 +886,20 @@ export default function AdminDashboard() {
       return matchSearch && matchStatus;
     });
   }, [brands, brandSearch, brandStatusFilter]);
+
+  // Lọc Users
+  const filteredUsers = useMemo(() => {
+    return users.filter((u) => {
+      const matchSearch =
+        u.email.toLowerCase().includes(userSearchKeyword.toLowerCase()) ||
+        u.full_name.toLowerCase().includes(userSearchKeyword.toLowerCase()) ||
+        (u.phone && u.phone.includes(userSearchKeyword.trim())) ||
+        String(u.id) === userSearchKeyword.trim();
+      const matchRole = userRoleFilter === 'ALL' || u.role === userRoleFilter;
+      const matchStatus = userStatusFilter === 'ALL' || u.status === userStatusFilter;
+      return matchSearch && matchRole && matchStatus;
+    });
+  }, [users, userSearchKeyword, userRoleFilter, userStatusFilter]);
 
   // Loading Screen
   if (isLoading) {
@@ -725,27 +960,30 @@ export default function AdminDashboard() {
       >
         {/* Sidebar Header / Brand */}
         <div className="p-3 border-bottom d-flex align-items-center justify-content-between">
-          <div className="d-flex align-items-center gap-2 overflow-hidden">
+          <Link href="/" className="d-flex align-items-center gap-2 overflow-hidden text-decoration-none">
             <div
               className="rounded-3 d-flex align-items-center justify-content-center text-white fw-bold shadow-sm"
               style={{
                 width: '38px',
                 height: '38px',
-                background: 'linear-gradient(135deg, #0d6efd, #0b5ed7)',
+                backgroundColor: '#d70018',
+                borderRadius: '10px',
                 flexShrink: 0,
               }}
             >
-              <i className="bi bi-cpu-fill fs-5"></i>
+              <i className="bi bi-phone-fill fs-5 text-white"></i>
             </div>
             {sidebarOpen && (
-              <div className="text-truncate" style={{ lineHeight: '1.2' }}>
-                <span className="fw-bold fs-6 text-dark d-block">Admin Portal</span>
-                <span className="text-muted text-uppercase" style={{ fontSize: '10px', letterSpacing: '0.5px' }}>
-                  MySQL 3-Tables CRUD
+              <div className="text-truncate" style={{ lineHeight: '1.1' }}>
+                <span className="fw-black text-dark d-block" style={{ fontWeight: '900', letterSpacing: '-0.5px', fontSize: '18px' }}>
+                  Tech<b className="text-warning">Mart</b>
+                </span>
+                <span className="badge bg-danger-subtle text-danger px-1 py-0" style={{ fontSize: '10px' }}>
+                  ADMIN
                 </span>
               </div>
             )}
-          </div>
+          </Link>
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
             className="btn btn-link text-muted p-0 text-decoration-none"
@@ -794,6 +1032,18 @@ export default function AdminDashboard() {
               </button>
             </li>
 
+            <li className="nav-item">
+              <button
+                onClick={() => setActiveTab('users')}
+                className={`nav-link rounded-3 px-3 py-2 fw-semibold d-flex align-items-center gap-3 w-100 text-start border-0 ${
+                  activeTab === 'users' ? 'active bg-warning-subtle text-dark' : 'text-secondary bg-transparent hover-primary'
+                }`}
+              >
+                <i className="bi bi-people-fill fs-5 text-warning"></i>
+                {sidebarOpen && <span>Tài khoản ({users.length})</span>}
+              </button>
+            </li>
+
             <li className="nav-item pt-2 border-top mt-2">
               <div className="px-3 pb-1 text-uppercase text-muted" style={{ fontSize: '10px' }}>
                 {sidebarOpen && 'Thao tác nhanh'}
@@ -818,6 +1068,13 @@ export default function AdminDashboard() {
               >
                 <i className="bi bi-plus-circle fs-5"></i>
                 {sidebarOpen && <span>+ Thêm Thương Hiệu</span>}
+              </button>
+              <button
+                onClick={handleOpenAddUser}
+                className="nav-link rounded-3 px-3 py-2 text-warning fw-semibold d-flex align-items-center gap-3 w-100 text-start border-0 bg-transparent hover-primary"
+              >
+                <i className="bi bi-person-plus-fill fs-5"></i>
+                {sidebarOpen && <span>+ Thêm Nhân Viên</span>}
               </button>
             </li>
           </ul>
@@ -849,7 +1106,7 @@ export default function AdminDashboard() {
           <div className="d-flex align-items-center gap-3">
             <span className="badge bg-light text-dark border px-3 py-2 fw-semibold">
               <i className="bi bi-database me-2 text-primary"></i>
-                Products - Categories - Brands
+                Sản phẩm - Danh mục - Thương hiệu - Tài khoản
             </span>
           </div>
 
@@ -899,6 +1156,7 @@ export default function AdminDashboard() {
                 {activeTab === 'products' && 'Quản Lý Bản Ghi Products'}
                 {activeTab === 'categories' && 'Quản Lý Bảng Categories'}
                 {activeTab === 'brands' && 'Quản Lý Brands'}
+                {activeTab === 'users' && 'Quản Lý Tài Khoản (Users & Roles)'}
               </h4>
               <p className="text-secondary small mb-0">
                 Toàn bộ thao tác Thêm, Sửa, Xóa tuân thủ ràng buộc Khóa Chính, Khóa Ngoại và Ràng Buộc UNIQUE của MySQL.
@@ -963,14 +1221,33 @@ export default function AdminDashboard() {
                 </>
               )}
 
+              {activeTab === 'users' && (
+                <>
+                  <button
+                    onClick={handleExportUserCSV}
+                    className="btn btn-white btn-sm bg-white border text-secondary shadow-sm rounded-2 px-3 fw-semibold"
+                    title="Xuất bảng users ra CSV"
+                  >
+                    <i className="bi bi-file-earmark-spreadsheet me-1 text-success"></i>Xuất CSV
+                  </button>
+                  <button
+                    onClick={handleOpenAddUser}
+                    className="btn btn-warning text-dark btn-sm rounded-2 px-3 fw-bold shadow-sm d-flex align-items-center gap-1"
+                  >
+                    <i className="bi bi-person-plus-fill"></i>
+                    <span>+ Thêm Tài Khoản</span>
+                  </button>
+                </>
+              )}
+
 
             </div>
           </div>
 
           {/* ================= 3. STATS STRIP ================= */}
           <div className="row g-3 mb-4">
-            {/* Thẻ 1: Products (Chiếm 4/12 cột) */}
-            <div className="col-12 col-md-4">
+            {/* Thẻ 1: Products */}
+            <div className="col-12 col-sm-6 col-xl-3">
               <div
                 className={`card border-0 shadow-sm rounded-3 p-3 bg-white h-100 cursor-pointer ${
                   activeTab === 'products' ? 'border-primary border-2 border' : ''
@@ -991,8 +1268,8 @@ export default function AdminDashboard() {
               </div>
             </div>
 
-            {/* Thẻ 2: Categories (Chiếm 4/12 cột) */}
-            <div className="col-12 col-md-4">
+            {/* Thẻ 2: Categories */}
+            <div className="col-12 col-sm-6 col-xl-3">
               <div
                 className={`card border-0 shadow-sm rounded-3 p-3 bg-white h-100 cursor-pointer ${
                   activeTab === 'categories' ? 'border-success border-2 border' : ''
@@ -1013,8 +1290,8 @@ export default function AdminDashboard() {
               </div>
             </div>
 
-            {/* Thẻ 3: Brands (Chiếm 4/12 cột) */}
-            <div className="col-12 col-md-4">
+            {/* Thẻ 3: Brands */}
+            <div className="col-12 col-sm-6 col-xl-3">
               <div
                 className={`card border-0 shadow-sm rounded-3 p-3 bg-white h-100 cursor-pointer ${
                   activeTab === 'brands' ? 'border-info border-2 border' : ''
@@ -1031,6 +1308,28 @@ export default function AdminDashboard() {
                 <h4 className="fw-bold text-dark mb-1">{brands.length} Thương hiệu</h4>
                 <span className="text-info small fw-semibold">
                   <i className="bi bi-check2-circle me-1"></i>{brands.filter((b) => b.status === 'ACTIVE').length} đang hoạt động
+                </span>
+              </div>
+            </div>
+
+            {/* Thẻ 4: Users */}
+            <div className="col-12 col-sm-6 col-xl-3">
+              <div
+                className={`card border-0 shadow-sm rounded-3 p-3 bg-white h-100 cursor-pointer ${
+                  activeTab === 'users' ? 'border-warning border-2 border' : ''
+                }`}
+                style={{ cursor: 'pointer' }}
+                onClick={() => setActiveTab('users')}
+              >
+                <div className="d-flex justify-content-between align-items-center mb-2">
+                  <span className="text-muted small fw-semibold text-uppercase">Bảng Users</span>
+                  <div className="rounded-3 d-flex align-items-center justify-content-center text-warning" style={{ width: '40px', height: '40px', backgroundColor: '#fef3c7' }}>
+                    <i className="bi bi-people-fill fs-5"></i>
+                  </div>
+                </div>
+                <h4 className="fw-bold text-dark mb-1">{users.length} Tài khoản</h4>
+                <span className="text-warning-emphasis small fw-semibold">
+                  <i className="bi bi-person-badge me-1"></i>{users.filter((u) => u.role === 'STAFF').length} nhân viên (Staff)
                 </span>
               </div>
             </div>
@@ -1060,6 +1359,14 @@ export default function AdminDashboard() {
                 className={`nav-link fw-semibold px-4 py-2 ${activeTab === 'brands' ? 'active bg-info text-white' : 'text-secondary'}`}
               >
                 <i className="bi bi-award-fill me-2"></i>Brands ({brands.length})
+              </button>
+            </li>
+            <li className="nav-item">
+              <button
+                onClick={() => setActiveTab('users')}
+                className={`nav-link fw-semibold px-4 py-2 ${activeTab === 'users' ? 'active bg-warning text-dark' : 'text-secondary'}`}
+              >
+                <i className="bi bi-people-fill me-2"></i>Users & Roles ({users.length})
               </button>
             </li>
           </ul>
@@ -1592,6 +1899,200 @@ export default function AdminDashboard() {
               </div>
             </div>
           )}
+
+          {/* ================= 7. BẢNG USERS (TAB QUẢN LÝ TÀI KHOẢN THEO CSDL) ================= */}
+          {activeTab === 'users' && (
+            <div className="card border-0 shadow-sm rounded-3 bg-white mb-4">
+              <div className="card-header bg-white py-3 border-bottom">
+                <div className="d-flex flex-wrap justify-content-between align-items-center gap-3">
+                  <div>
+                    <h5 className="fw-bold text-dark mb-0">
+                      <i className="bi bi-people-fill me-2 text-warning"></i>
+                      Tài Khoản Người Dùng & Phân Quyền
+                    </h5>
+                    <small className="text-muted">
+                      Đồng bộ bảng users và user_roles (Admin, Staff, Customer)
+                    </small>
+                  </div>
+                  <div className="d-flex align-items-center gap-2">
+                    <button
+                      onClick={handleOpenAddUser}
+                      className="btn btn-warning text-dark btn-sm rounded-pill px-3 fw-bold shadow-sm"
+                    >
+                      <i className="bi bi-person-plus-fill me-1"></i>Thêm Tài Khoản
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Users Filter Strip */}
+              <div className="card-body border-bottom bg-light bg-opacity-50 py-3">
+                <div className="row g-2 align-items-center">
+                  <div className="col-12 col-md-4">
+                    <div className="input-group input-group-sm">
+                      <span className="input-group-text bg-white border-end-0">
+                        <i className="bi bi-search text-muted"></i>
+                      </span>
+                      <input
+                        type="text"
+                        className="form-control bg-white border-start-0"
+                        placeholder="Tìm email, họ tên, số điện thoại, ID..."
+                        value={userSearchKeyword}
+                        onChange={(e) => setUserSearchKeyword(e.target.value)}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="col-6 col-md-3">
+                    <select
+                      className="form-select form-select-sm"
+                      value={userRoleFilter}
+                      onChange={(e) => setUserRoleFilter(e.target.value)}
+                    >
+                      <option value="ALL">Tất cả vai trò</option>
+                      <option value="ADMIN">ADMIN - Quản trị viên</option>
+                      <option value="STAFF">STAFF - Nhân viên</option>
+                      <option value="CUSTOMER">CUSTOMER - Khách hàng</option>
+                    </select>
+                  </div>
+
+                  <div className="col-6 col-md-3">
+                    <select
+                      className="form-select form-select-sm"
+                      value={userStatusFilter}
+                      onChange={(e) => setUserStatusFilter(e.target.value)}
+                    >
+                      <option value="ALL">Tất cả trạng thái</option>
+                      <option value="ACTIVE">Hoạt động (ACTIVE)</option>
+                      <option value="INACTIVE">Đã khóa (INACTIVE)</option>
+                    </select>
+                  </div>
+
+                  <div className="col-12 col-md-2 text-md-end">
+                    <span className="text-muted small">
+                      Tìm thấy: <strong>{filteredUsers.length}</strong> tài khoản
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Users Table */}
+              <div className="table-responsive">
+                <table className="table table-hover align-middle mb-0">
+                  <thead className="table-light">
+                    <tr>
+                      <th className="ps-4" style={{ width: '60px' }}>ID</th>
+                      <th>Họ và Tên</th>
+                      <th>Email / Đăng nhập</th>
+                      <th>Số Điện Thoại</th>
+                      <th>Vai Trò (Role)</th>
+                      <th>Trạng Thái</th>
+                      <th>Ngày Tạo</th>
+                      <th className="text-end pe-4" style={{ width: '130px' }}>Thao tác</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredUsers.length === 0 ? (
+                      <tr>
+                        <td colSpan="8" className="text-center py-5 text-muted">
+                          <i className="bi bi-person-x fs-1 d-block mb-2 text-secondary"></i>
+                          Không tìm thấy tài khoản nào phù hợp với bộ lọc.
+                        </td>
+                      </tr>
+                    ) : (
+                      filteredUsers.map((u) => {
+                        return (
+                          <tr key={u.id}>
+                            <td className="ps-4 fw-bold text-secondary">#{u.id}</td>
+                            <td>
+                              <div className="d-flex align-items-center gap-2">
+                                <div
+                                  className={`rounded-circle d-flex align-items-center justify-content-center text-white fw-bold ${
+                                    u.role === 'ADMIN'
+                                      ? 'bg-danger'
+                                      : u.role === 'STAFF'
+                                      ? 'bg-warning text-dark'
+                                      : 'bg-secondary'
+                                  }`}
+                                  style={{ width: '32px', height: '32px', fontSize: '12px' }}
+                                >
+                                  {u.full_name ? u.full_name.charAt(0).toUpperCase() : 'U'}
+                                </div>
+                                <span className="fw-semibold text-dark">{u.full_name}</span>
+                              </div>
+                            </td>
+                            <td className="font-monospace text-primary">{u.email}</td>
+                            <td>{u.phone || <span className="text-muted fst-italic">Chưa có</span>}</td>
+                            <td>
+                              {u.role === 'ADMIN' && (
+                                <span className="badge bg-danger-subtle text-danger border border-danger-subtle">
+                                  <i className="bi bi-shield-fill me-1"></i>ADMIN
+                                </span>
+                              )}
+                              {u.role === 'STAFF' && (
+                                <span className="badge bg-warning-subtle text-dark border border-warning-subtle fw-bold">
+                                  <i className="bi bi-person-badge-fill me-1"></i>STAFF
+                                </span>
+                              )}
+                              {u.role === 'CUSTOMER' && (
+                                <span className="badge bg-secondary-subtle text-secondary border border-secondary-subtle">
+                                  <i className="bi bi-person me-1"></i>CUSTOMER
+                                </span>
+                              )}
+                            </td>
+                            <td>
+                              {u.status === 'ACTIVE' ? (
+                                <span className="badge bg-success-subtle text-success border border-success-subtle">
+                                  ● ACTIVE
+                                </span>
+                              ) : (
+                                <span className="badge bg-secondary-subtle text-secondary border border-secondary-subtle">
+                                  ○ INACTIVE
+                                </span>
+                              )}
+                            </td>
+                            <td className="small text-muted">{u.created_at}</td>
+                            <td className="text-end pe-4">
+                              <div className="btn-group btn-group-sm">
+                                <button
+                                  onClick={() => handleToggleUserStatus(u.id)}
+                                  className={`btn btn-light border ${u.status === 'ACTIVE' ? 'text-warning' : 'text-success'}`}
+                                  title={u.status === 'ACTIVE' ? 'Khóa tài khoản' : 'Mở khóa tài khoản'}
+                                >
+                                  <i className={`bi ${u.status === 'ACTIVE' ? 'bi-lock-fill' : 'bi-unlock-fill'}`}></i>
+                                </button>
+                                <button
+                                  onClick={() => handleOpenEditUser(u)}
+                                  className="btn btn-light text-primary border"
+                                  title="Chỉnh sửa tài khoản"
+                                >
+                                  <i className="bi bi-pencil-square"></i>
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteUser(u.id, u.email)}
+                                  className="btn btn-light text-danger border"
+                                  title="Xóa tài khoản"
+                                  disabled={u.id === 1}
+                                >
+                                  <i className="bi bi-trash"></i>
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="card-footer bg-white py-3 border-top d-flex justify-content-between align-items-center">
+                <small className="text-muted">
+                  Hiển thị <strong>{filteredUsers.length}</strong> / <strong>{users.length}</strong> tài khoản
+                </small>
+              </div>
+            </div>
+          )}
         </main>
       </div>
 
@@ -2011,6 +2512,133 @@ export default function AdminDashboard() {
                   <button type="submit" className="btn btn-info text-white btn-sm px-4 fw-bold shadow-sm">
                     <i className="bi bi-check-lg me-1"></i>
                     {isEditingBrand ? 'Cập Nhật Thương Hiệu' : 'Lưu Thương Hiệu'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ================= 10. MODAL THÊM / SỬA USERS ================= */}
+      {showUserModal && (
+        <div
+          className="modal fade show d-block"
+          tabIndex="-1"
+          style={{ backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1060 }}
+        >
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content rounded-4 border-0 shadow">
+              <div className="modal-header bg-light py-3">
+                <h5 className="modal-title fw-bold text-dark d-flex align-items-center">
+                  <i className={`bi ${isEditingUser ? 'bi-pencil-square text-primary' : 'bi-person-plus-fill text-warning'} me-2`}></i>
+                  {isEditingUser ? 'Chỉnh Sửa Tài Khoản' : 'Thêm Tài Khoản Mới'}
+                </h5>
+                <button
+                  type="button"
+                  className="btn-close"
+                  onClick={() => setShowUserModal(false)}
+                ></button>
+              </div>
+
+              <form noValidate className={userValidated ? 'was-validated' : ''} onSubmit={handleSubmitUser}>
+                <div className="modal-body p-4">
+                  {/* Họ và tên */}
+                  <div className="mb-3">
+                    <label className="form-label fw-semibold small">Họ và Tên <span className="text-danger">*</span></label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      placeholder="VD: Nguyễn Văn A"
+                      required
+                      value={userFormData.full_name}
+                      onChange={(e) => setUserFormData({ ...userFormData, full_name: e.target.value })}
+                    />
+                    <div className="invalid-feedback">Vui lòng nhập họ và tên.</div>
+                  </div>
+
+                  {/* Email */}
+                  <div className="mb-3">
+                    <label className="form-label fw-semibold small">Email Đăng Nhập <span className="text-danger">*</span></label>
+                    <input
+                      type="email"
+                      className="form-control font-monospace"
+                      placeholder="VD: staff01@techmart.vn"
+                      required
+                      value={userFormData.email}
+                      onChange={(e) => setUserFormData({ ...userFormData, email: e.target.value })}
+                    />
+                    <div className="invalid-feedback">Vui lòng nhập email hợp lệ.</div>
+                  </div>
+
+                  {/* Mật khẩu */}
+                  <div className="mb-3">
+                    <label className="form-label fw-semibold small">
+                      {isEditingUser ? 'Mật khẩu mới (Bỏ trống nếu không đổi)' : <>Mật khẩu <span className="text-danger">*</span></>}
+                    </label>
+                    <input
+                      type="password"
+                      className="form-control"
+                      placeholder="••••••••"
+                      required={!isEditingUser}
+                      value={userFormData.password}
+                      onChange={(e) => setUserFormData({ ...userFormData, password: e.target.value })}
+                    />
+                    <div className="invalid-feedback">Vui lòng nhập mật khẩu.</div>
+                  </div>
+
+                  {/* Số điện thoại */}
+                  <div className="mb-3">
+                    <label className="form-label fw-semibold small">Số Điện Thoại</label>
+                    <input
+                      type="tel"
+                      className="form-control"
+                      placeholder="VD: 0988123456"
+                      value={userFormData.phone}
+                      onChange={(e) => setUserFormData({ ...userFormData, phone: e.target.value })}
+                    />
+                  </div>
+
+                  {/* Vai trò (Role) & Trạng thái */}
+                  <div className="row g-2">
+                    <div className="col-6">
+                      <label className="form-label fw-semibold small">Vai Trò (Role) <span className="text-danger">*</span></label>
+                      <select
+                        className="form-select"
+                        value={userFormData.role}
+                        onChange={(e) => setUserFormData({ ...userFormData, role: e.target.value })}
+                      >
+                        <option value="STAFF">STAFF (Nhân viên)</option>
+                        <option value="ADMIN">ADMIN (Quản trị viên)</option>
+                        <option value="CUSTOMER">CUSTOMER (Khách hàng)</option>
+                      </select>
+                    </div>
+
+                    <div className="col-6">
+                      <label className="form-label fw-semibold small">Trạng Thái <span className="text-danger">*</span></label>
+                      <select
+                        className="form-select"
+                        value={userFormData.status}
+                        onChange={(e) => setUserFormData({ ...userFormData, status: e.target.value })}
+                      >
+                        <option value="ACTIVE">Kích hoạt (ACTIVE)</option>
+                        <option value="INACTIVE">Khóa (INACTIVE)</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="modal-footer bg-light py-2">
+                  <button
+                    type="button"
+                    className="btn btn-secondary btn-sm px-3"
+                    onClick={() => setShowUserModal(false)}
+                  >
+                    Hủy bỏ
+                  </button>
+                  <button type="submit" className="btn btn-warning text-dark btn-sm px-4 fw-bold shadow-sm">
+                    <i className="bi bi-check-lg me-1"></i>
+                    {isEditingUser ? 'Cập Nhật Tài Khoản' : 'Lưu Tài Khoản'}
                   </button>
                 </div>
               </form>

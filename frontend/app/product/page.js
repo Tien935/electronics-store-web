@@ -165,6 +165,8 @@ const DB_PRODUCTS = [
   },
 ];
 
+
+
 function CellphoneSProductDetail() {
   const searchParams = useSearchParams();
   const rawId = searchParams.get('id');
@@ -473,49 +475,7 @@ function CellphoneSProductDetail() {
                   </div>
                 </div>
 
-                {/* 3. Chọn Màu Sắc (Áp dụng cùng 1 giá duy nhất) */}
-                {product.colors && product.colors.length > 0 && (
-                  <div className="mb-3">
-                    <div className="fw-bold small text-dark mb-2">
-                      Chọn màu sắc: <span className="text-danger fw-semibold">{selectedColor}</span>
-                    </div>
-                    <div className="d-flex gap-2 flex-wrap">
-                      {product.colors.map((c) => {
-                        const isSelected = selectedColor === c.name;
-                        return (
-                          <button
-                            key={c.name}
-                            type="button"
-                            onClick={() => setSelectedColor(c.name)}
-                            className="btn d-flex align-items-center gap-2 text-start position-relative"
-                            style={{
-                              border: isSelected ? '2px solid #d70018' : '1px solid #e0e0e0',
-                              backgroundColor: isSelected ? '#fff5f5' : '#fff',
-                              borderRadius: '8px',
-                              padding: '8px 14px',
-                            }}
-                          >
-                            <span
-                              className="rounded-circle border d-inline-block shadow-sm"
-                              style={{ width: '16px', height: '16px', backgroundColor: c.hex }}
-                            ></span>
-                            <span className="fw-semibold" style={{ color: isSelected ? '#d70018' : '#333', fontSize: '13px' }}>
-                              {c.name}
-                            </span>
-                            {isSelected && (
-                              <span
-                                className="position-absolute top-0 end-0 translate-middle-y me-1 badge rounded-circle bg-danger p-1"
-                                style={{ fontSize: '8px' }}
-                              >
-                                <i className="bi bi-check"></i>
-                              </span>
-                            )}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
+
 
                 {/* 4. Khối Khuyến Mại Hộp Quà Đặc Trưng CellphoneS */}
                 <div
@@ -553,22 +513,6 @@ function CellphoneSProductDetail() {
                   </ul>
                 </div>
 
-                {/* 5. Vị trí và số lượng cửa hàng còn hàng */}
-                <div className="p-2 mb-3 rounded-2 bg-light border d-flex align-items-center justify-content-between text-muted" style={{ fontSize: '12px' }}>
-                  <div>
-                    <i className="bi bi-shop me-1 text-danger"></i>
-                    Có <strong>18 cửa hàng</strong> tại <strong>{selectedLocation}</strong> sẵn hàng giao ngay.
-                  </div>
-                  <select
-                    className="form-select form-select-sm border-0 bg-transparent fw-bold text-danger w-auto"
-                    value={selectedLocation}
-                    onChange={(e) => setSelectedLocation(e.target.value)}
-                  >
-                    <option value="Hà Nội">Khu vực Hà Nội</option>
-                    <option value="TP. Hồ Chí Minh">Khu vực TP. Hồ Chí Minh</option>
-                    <option value="Đà Nẵng">Khu vực Đà Nẵng</option>
-                  </select>
-                </div>
 
                 {/* 6. Cụm Nút Mua Hàng & Trả Góp CellphoneS */}
                 <div className="d-flex flex-column gap-2">
@@ -672,7 +616,17 @@ function CellphoneSProductDetail() {
                     </tr>
                     <tr>
                       <td className="text-muted py-2">Trạng thái:</td>
-                      <td className="fw-semibold text-success py-2">{product.status}</td>
+                      <td className="py-2">
+                        {product.status === 'ACTIVE' ? (
+                            <span className="fw-bold text-success">
+        <i className="bi bi-check-circle-fill me-1"></i>Còn hàng
+      </span>
+                        ) : (
+                            <span className="fw-bold text-danger">
+        <i className="bi bi-x-circle-fill me-1"></i>Hết hàng
+      </span>
+                        )}
+                      </td>
                     </tr>
                   </tbody>
                 </table>
