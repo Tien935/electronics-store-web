@@ -67,6 +67,39 @@ public class GlobalExceptionHandler {
         );
     }
 
+    @ExceptionHandler({
+            DuplicateCategorySlugException.class,
+            CategoryInUseException.class
+    })
+    public ResponseEntity<ApiErrorResponse> handleCategoryConflict(
+            RuntimeException exception,
+            HttpServletRequest request
+    ) {
+        return buildResponse(
+                HttpStatus.CONFLICT,
+                exception.getMessage(),
+                request.getRequestURI(),
+                Map.of()
+        );
+    }
+
+    @ExceptionHandler({
+            DuplicateBrandNameException.class,
+            DuplicateBrandSlugException.class,
+            BrandInUseException.class
+    })
+    public ResponseEntity<ApiErrorResponse> handleBrandConflict(
+            RuntimeException exception,
+            HttpServletRequest request
+    ) {
+        return buildResponse(
+                HttpStatus.CONFLICT,
+                exception.getMessage(),
+                request.getRequestURI(),
+                Map.of()
+        );
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiErrorResponse> handleValidation(
             MethodArgumentNotValidException exception,

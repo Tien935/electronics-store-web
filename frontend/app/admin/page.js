@@ -4,6 +4,23 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useMemo } from 'react';
 
+const API_BASE_URL =
+    process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080';
+
+const mapProductFromApi = (product) => ({
+  ...product,
+  category_id: product.categoryId,
+  brand_id: product.brandId,
+  image_url: product.imageUrl,
+  created_at: product.createdAt,
+  updated_at: product.updatedAt,
+});
+
+const mapBrandFromApi = (brand) => ({
+  ...brand,
+  logo_url: brand.logoUrl,
+});
+
 export default function AdminDashboard() {
   const router = useRouter();
   const [currentUser, setCurrentUser] = useState(null);
@@ -13,135 +30,11 @@ export default function AdminDashboard() {
   // Tab điều hướng: 'products' (chính), 'categories', 'brands'
   const [activeTab, setActiveTab] = useState('products');
 
-  // ================= 1. DỮ LIỆU BẢNG CATEGORIES (THEO CSDL) =================
-  const initialCategories = [
-    { id: 1, name: 'Điện thoại di động', slug: 'dien-thoai', description: 'Các dòng smartphone cao cấp và phổ thông', status: 'ACTIVE' },
-    { id: 2, name: 'Laptop / Máy tính xách tay', slug: 'laptop', description: 'Laptop văn phòng, đồ họa và gaming', status: 'ACTIVE' },
-    { id: 3, name: 'Máy tính bảng (Tablet)', slug: 'tablet', description: 'iPad và máy tính bảng Android', status: 'ACTIVE' },
-    { id: 4, name: 'Phụ kiện & Tai nghe', slug: 'phu-kien', description: 'Tai nghe, củ cáp sạc, phụ kiện chính hãng', status: 'ACTIVE' },
-    { id: 5, name: 'Đồng hồ thông minh', slug: 'smartwatch', description: 'Smartwatch và thiết bị đeo theo dõi sức khỏe', status: 'ACTIVE' },
-  ];
+  // ================= 1. DỮ LIỆU BẢNG CATEGORIES (THEO CSDL) ================
 
-  // ================= 2. DỮ LIỆU BẢNG BRANDS (THEO CSDL) =================
-  const initialBrands = [
-    { id: 1, name: 'Apple', slug: 'apple', logo_url: 'https://upload.wikimedia.org/wikipedia/commons/f/fa/Apple_logo_black.svg', status: 'ACTIVE' },
-    { id: 2, name: 'Samsung', slug: 'samsung', logo_url: 'https://upload.wikimedia.org/wikipedia/commons/2/24/Samsung_Logo.svg', status: 'ACTIVE' },
-    { id: 3, name: 'ASUS', slug: 'asus', logo_url: 'https://upload.wikimedia.org/wikipedia/commons/2/2e/ASUS_Logo.svg', status: 'ACTIVE' },
-    { id: 4, name: 'Sony', slug: 'sony', logo_url: 'https://upload.wikimedia.org/wikipedia/commons/c/ca/Sony_logo.svg', status: 'ACTIVE' },
-    { id: 5, name: 'Xiaomi', slug: 'xiaomi', logo_url: 'https://upload.wikimedia.org/wikipedia/commons/2/29/Xiaomi_logo.svg', status: 'ACTIVE' },
-  ];
-
-  // ================= 3. DỮ LIỆU BẢNG PRODUCTS (CHUẨN 100% CSDL) =================
-  const initialProducts = [
-    {
-      id: 1,
-      sku: 'IP16PM-256-TN',
-      name: 'iPhone 16 Pro Max 256GB',
-      description: 'Chip Apple A18 Pro, màn hình Super Retina XDR 6.9 inch, khung viền Titan sa mạc cao cấp.',
-      price: 34990000,
-      image_url: 'https://images.unsplash.com/photo-1695048133142-1a20484d2569?w=300&h=300&fit=crop',
-      category_id: 1,
-      brand_id: 1,
-      status: 'ACTIVE',
-      created_at: '2026-11-15 08:30:00',
-      updated_at: '2026-11-20 14:20:00',
-    },
-    {
-      id: 2,
-      sku: 'SS-S24U-512-TI',
-      name: 'Samsung Galaxy S24 Ultra 512GB',
-      description: 'Snapdragon 8 Gen 3 for Galaxy, Galaxy AI dịch thuật 2 chiều, bút S-Pen tích hợp.',
-      price: 29990000,
-      image_url: 'https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?w=300&h=300&fit=crop',
-      category_id: 1,
-      brand_id: 2,
-      status: 'ACTIVE',
-      created_at: '2026-11-16 09:15:00',
-      updated_at: '2026-11-21 11:45:00',
-    },
-    {
-      id: 3,
-      sku: 'MBA-M3-15-16GB',
-      name: 'MacBook Air M3 15 inch 16GB/512GB',
-      description: 'Apple Silicon M3 8-core CPU / 10-core GPU, màn hình Liquid Retina sắc nét.',
-      price: 32490000,
-      image_url: 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=300&h=300&fit=crop',
-      category_id: 2,
-      brand_id: 1,
-      status: 'ACTIVE',
-      created_at: '2026-11-17 10:00:00',
-      updated_at: '2026-11-21 16:10:00',
-    },
-    {
-      id: 4,
-      sku: 'IPP-M4-11-256',
-      name: 'iPad Pro M4 11 inch Wi-Fi 256GB',
-      description: 'Màn hình Ultra Retina XDR Tandem OLED đột phá, siêu mỏng 5.3mm, chip Apple M4.',
-      price: 28990000,
-      image_url: 'https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?w=300&h=300&fit=crop',
-      category_id: 3,
-      brand_id: 1,
-      status: 'ACTIVE',
-      created_at: '2026-11-18 13:20:00',
-      updated_at: '2026-11-21 09:30:00',
-    },
-    {
-      id: 5,
-      sku: 'APP2-USBC-WHITE',
-      name: 'Tai nghe Apple AirPods Pro 2 USB-C',
-      description: 'Chip H2, chống ồn chủ động ANC gấp 2 lần, hộp sạc MagSafe cổng USB-C.',
-      price: 5790000,
-      image_url: 'https://images.unsplash.com/photo-1600294037681-c80b4cb5b434?w=300&h=300&fit=crop',
-      category_id: 4,
-      brand_id: 1,
-      status: 'ACTIVE',
-      created_at: '2026-11-19 15:45:00',
-      updated_at: '2026-11-22 08:00:00',
-    },
-    {
-      id: 6,
-      sku: 'ASUS-ROG-G16-4070',
-      name: 'Laptop Gaming ASUS ROG Zephyrus G16',
-      description: 'Intel Core Ultra 9, RTX 4070 8GB, màn hình ROG Nebula OLED 2.5K 240Hz.',
-      price: 52990000,
-      image_url: 'https://images.unsplash.com/photo-1593642632823-8f785ba67e45?w=300&h=300&fit=crop',
-      category_id: 2,
-      brand_id: 3,
-      status: 'ACTIVE',
-      created_at: '2026-11-19 16:30:00',
-      updated_at: '2026-11-22 08:15:00',
-    },
-    {
-      id: 7,
-      sku: 'XM-14U-512-LEICA',
-      name: 'Xiaomi 14 Ultra 5G 512GB Leica',
-      description: 'Ống kính quang học Leica Vario-Summilux, cảm biến 1 inch đỉnh cao công nghệ chụp ảnh.',
-      price: 26990000,
-      image_url: 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=300&h=300&fit=crop',
-      category_id: 1,
-      brand_id: 5,
-      status: 'INACTIVE',
-      created_at: '2026-11-20 11:00:00',
-      updated_at: '2026-11-22 08:20:00',
-    },
-    {
-      id: 8,
-      sku: 'SONY-WH1000XM5-BLK',
-      name: 'Tai nghe không dây Sony WH-1000XM5',
-      description: 'Bộ xử lý chống ồn V1 tích hợp QN1, thời lượng pin 30 giờ, công nghệ đàm thoại AI.',
-      price: 7990000,
-      image_url: 'https://images.unsplash.com/photo-1546435770-a3e426bf472b?w=300&h=300&fit=crop',
-      category_id: 4,
-      brand_id: 4,
-      status: 'ACTIVE',
-      created_at: '2026-11-20 14:10:00',
-      updated_at: '2026-11-22 08:25:00',
-    },
-  ];
-
-  const [categories, setCategories] = useState(initialCategories);
-  const [brands, setBrands] = useState(initialBrands);
-  const [products, setProducts] = useState(initialProducts);
+  const [categories, setCategories] = useState([]);
+  const [brands, setBrands] = useState([]);
+  const [products, setProducts] = useState([]);
 
   // Bộ lọc & Tìm kiếm Products
   const [searchKeyword, setSearchKeyword] = useState('');
@@ -163,6 +56,7 @@ export default function AdminDashboard() {
   const [isEditingProduct, setIsEditingProduct] = useState(false);
   const [currentEditId, setCurrentEditId] = useState(null);
   const [validated, setValidated] = useState(false);
+  const [isSubmittingProduct, setIsSubmittingProduct] = useState(false);
   const [formData, setFormData] = useState({
     sku: '',
     name: '',
@@ -179,6 +73,7 @@ export default function AdminDashboard() {
   const [isEditingCategory, setIsEditingCategory] = useState(false);
   const [currentEditCategoryId, setCurrentEditCategoryId] = useState(null);
   const [categoryValidated, setCategoryValidated] = useState(false);
+  const [isSubmittingCategory, setIsSubmittingCategory] = useState(false);
   const [categoryFormData, setCategoryFormData] = useState({
     name: '',
     slug: '',
@@ -191,6 +86,7 @@ export default function AdminDashboard() {
   const [isEditingBrand, setIsEditingBrand] = useState(false);
   const [currentEditBrandId, setCurrentEditBrandId] = useState(null);
   const [brandValidated, setBrandValidated] = useState(false);
+  const [isSubmittingBrand, setIsSubmittingBrand] = useState(false);
   const [brandFormData, setBrandFormData] = useState({
     name: '',
     slug: '',
@@ -203,24 +99,87 @@ export default function AdminDashboard() {
 
   // Auth Guard: Kiểm tra quyền ADMIN
   useEffect(() => {
-    const savedUser = localStorage.getItem('currentUser');
+    const initializeAdminPage = async () => {
+      const savedUser = localStorage.getItem('currentUser');
+      const accessToken = localStorage.getItem('accessToken');
 
-    if (savedUser) {
+      if (!savedUser || !accessToken) {
+        setIsLoading(false);
+        return;
+      }
+
       try {
         const user = JSON.parse(savedUser);
 
-        if (Array.isArray(user.roles) && user.roles.includes('ADMIN')) {
-          setCurrentUser(user);
+        if (!Array.isArray(user.roles) || !user.roles.includes('ADMIN')) {
+          setIsLoading(false);
+          return;
         }
-      } catch (error) {
-        console.error('Không thể đọc thông tin người dùng:', error);
-        localStorage.removeItem('currentUser');
-        localStorage.removeItem('accessToken');
-      }
-    }
 
-    setIsLoading(false);
-  }, []);
+        setCurrentUser(user);
+
+        const [productsResponse, categoriesResponse, brandsResponse] =
+            await Promise.all([
+              fetch(`${API_BASE_URL}/api/admin/products`, {
+                headers: {
+                  Authorization: `Bearer ${accessToken}`,
+                },
+              }),
+              fetch(`${API_BASE_URL}/api/admin/categories`, {
+                headers: {
+                  Authorization: `Bearer ${accessToken}`,
+                },
+              }),
+              fetch(`${API_BASE_URL}/api/admin/brands`, {
+                headers: {
+                  Authorization: `Bearer ${accessToken}`,
+                },
+              }),
+            ]);
+
+        if (
+            productsResponse.status === 401 ||
+            productsResponse.status === 403
+        ) {
+          localStorage.removeItem('currentUser');
+          localStorage.removeItem('accessToken');
+          setCurrentUser(null);
+          router.replace('/login');
+          return;
+        }
+
+        if (
+            !productsResponse.ok ||
+            !categoriesResponse.ok ||
+            !brandsResponse.ok
+        ) {
+          throw new Error('Không thể tải dữ liệu Catalog.');
+        }
+
+        const [productData, categoryData, brandData] = await Promise.all([
+          productsResponse.json(),
+          categoriesResponse.json(),
+          brandsResponse.json(),
+        ]);
+
+        setProducts(productData.map(mapProductFromApi));
+        setCategories(categoryData);
+        setBrands(brandData.map(mapBrandFromApi));
+      } catch (error) {
+        console.error('Lỗi tải dữ liệu Catalog:', error);
+
+        setAlertNotice({
+          show: true,
+          message: 'Không thể tải dữ liệu sản phẩm từ máy chủ.',
+          type: 'danger',
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    initializeAdminPage();
+  }, [router]);
 
   const handleLogout = () => {
     localStorage.removeItem('currentUser');
@@ -231,6 +190,20 @@ export default function AdminDashboard() {
   const showAlert = (message, type = 'success') => {
     setAlertNotice({ show: true, message, type });
     setTimeout(() => setAlertNotice({ show: false, message: '', type: 'success' }), 4000);
+  };
+
+  const getApiErrorMessage = async (response) => {
+    try {
+      const data = await response.json();
+
+      if (data.fieldErrors && Object.keys(data.fieldErrors).length > 0) {
+        return Object.values(data.fieldErrors).join(', ');
+      }
+
+      return data.message || data.error || 'Đã xảy ra lỗi khi gọi API.';
+    } catch {
+      return 'Không thể đọc phản hồi từ máy chủ.';
+    }
   };
 
   // Helper sinh tự động URL slug
@@ -295,78 +268,164 @@ export default function AdminDashboard() {
     setShowProductModal(true);
   };
 
-  const handleSubmitProduct = (e) => {
+  const handleSubmitProduct = async (e) => {
     e.preventDefault();
+
     const form = e.currentTarget;
 
-    if (form.checkValidity() === false) {
+    if (!form.checkValidity()) {
       e.stopPropagation();
       setValidated(true);
       return;
     }
 
-    const priceVal = Number(formData.price);
-    const nowTime = new Date().toISOString().replace('T', ' ').slice(0, 19);
+    const accessToken = localStorage.getItem('accessToken');
 
-    // Kiểm tra trùng SKU
-    const isDuplicateSku = products.some(
-      (p) => p.sku.toLowerCase() === formData.sku.trim().toLowerCase() && p.id !== currentEditId
-    );
-    if (isDuplicateSku) {
-      alert(`Lỗi Ràng Buộc UNIQUE: Mã SKU "${formData.sku}" đã tồn tại trong bảng products!`);
+    if (!accessToken) {
+      router.replace('/login');
       return;
     }
 
-    if (isEditingProduct && currentEditId) {
-      setProducts((prev) =>
-        prev.map((p) => {
-          if (p.id === currentEditId) {
-            return {
-              ...p,
-              sku: formData.sku.trim(),
-              name: formData.name.trim(),
-              category_id: Number(formData.category_id),
-              brand_id: Number(formData.brand_id),
-              price: priceVal,
-              image_url: formData.image_url.trim() || 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=300&h=300&fit=crop',
-              description: formData.description.trim(),
-              status: formData.status,
-              updated_at: nowTime,
-            };
-          }
-          return p;
-        })
-      );
-      showAlert(`Đã UPDATE sản phẩm [${formData.name}] (ID: ${currentEditId}) thành công!`, 'success');
-    } else {
-      const nextId = products.length > 0 ? Math.max(...products.map((p) => p.id)) + 1 : 1;
-      const newProduct = {
-        id: nextId,
-        sku: formData.sku.trim(),
-        name: formData.name.trim(),
-        category_id: Number(formData.category_id),
-        brand_id: Number(formData.brand_id),
-        price: priceVal,
-        image_url: formData.image_url.trim() || 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=300&h=300&fit=crop',
-        description: formData.description.trim(),
-        status: formData.status,
-        created_at: nowTime,
-        updated_at: nowTime,
-      };
-      setProducts([newProduct, ...products]);
-      showAlert(`Đã INSERT sản phẩm mới [${formData.name}] (SKU: ${formData.sku}) vào CSDL!`, 'success');
-    }
+    const productRequest = {
+      sku: formData.sku.trim(),
+      name: formData.name.trim(),
+      description: formData.description.trim(),
+      price: Number(formData.price),
+      imageUrl: formData.image_url.trim(),
+      categoryId: Number(formData.category_id),
+      brandId: Number(formData.brand_id),
+      status: formData.status,
+    };
 
-    setShowProductModal(false);
-    setValidated(false);
+    const url = isEditingProduct
+        ? `${API_BASE_URL}/api/admin/products/${currentEditId}`
+        : `${API_BASE_URL}/api/admin/products`;
+
+    try {
+      setIsSubmittingProduct(true);
+
+      const response = await fetch(url, {
+        method: isEditingProduct ? 'PUT' : 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify(productRequest),
+      });
+
+      if (response.status === 401) {
+        localStorage.removeItem('currentUser');
+        localStorage.removeItem('accessToken');
+        router.replace('/login');
+        return;
+      }
+
+      if (response.status === 403) {
+        throw new Error('Bạn không có quyền quản lý sản phẩm.');
+      }
+
+      if (!response.ok) {
+        throw new Error(await getApiErrorMessage(response));
+      }
+
+      const savedProduct = mapProductFromApi(await response.json());
+
+      if (isEditingProduct) {
+        setProducts((previousProducts) =>
+            previousProducts.map((product) =>
+                product.id === savedProduct.id ? savedProduct : product
+            )
+        );
+
+        showAlert(
+            `Đã cập nhật sản phẩm "${savedProduct.name}" thành công.`,
+            'success'
+        );
+      } else {
+        setProducts((previousProducts) => [
+          savedProduct,
+          ...previousProducts,
+        ]);
+
+        showAlert(
+            `Đã thêm sản phẩm "${savedProduct.name}" thành công.`,
+            'success'
+        );
+      }
+
+      setShowProductModal(false);
+      setValidated(false);
+    } catch (error) {
+      console.error('Lỗi lưu sản phẩm:', error);
+      showAlert(error.message, 'danger');
+    } finally {
+      setIsSubmittingProduct(false);
+    }
   };
 
-  const handleDeleteProduct = (id, sku, name) => {
-    if (window.confirm(`Xác nhận DELETE FROM products WHERE id = ${id} AND sku = '${sku}'?`)) {
-      setProducts((prev) => prev.filter((p) => p.id !== id));
-      showAlert(`Đã xóa sản phẩm ID: ${id} (${name}) khỏi cơ sở dữ liệu!`, 'danger');
-    }
-  };
+    const handleDeleteProduct = async (id, sku, name) => {
+        const confirmed = window.confirm(
+            `Bạn có chắc muốn ngừng kinh doanh sản phẩm "${name}" (${sku}) không?`
+        );
+
+        if (!confirmed) {
+            return;
+        }
+
+        const accessToken = localStorage.getItem('accessToken');
+
+        if (!accessToken) {
+            router.replace('/login');
+            return;
+        }
+
+        try {
+            const response = await fetch(
+                `${API_BASE_URL}/api/admin/products/${id}`,
+                {
+                    method: 'DELETE',
+                    headers: {
+                        Authorization: `Bearer ${accessToken}`,
+                    },
+                }
+            );
+
+            if (response.status === 401) {
+                localStorage.removeItem('currentUser');
+                localStorage.removeItem('accessToken');
+                router.replace('/login');
+                return;
+            }
+
+            if (response.status === 403) {
+                throw new Error('Bạn không có quyền ngừng kinh doanh sản phẩm.');
+            }
+
+            if (!response.ok) {
+                throw new Error(await getApiErrorMessage(response));
+            }
+
+            setProducts((previousProducts) =>
+                previousProducts.map((product) =>
+                    product.id === id
+                        ? {
+                            ...product,
+                            status: 'INACTIVE',
+                            updated_at: new Date().toISOString(),
+                        }
+                        : product
+                )
+            );
+
+            showAlert(
+                `Sản phẩm "${name}" đã chuyển sang trạng thái INACTIVE.`,
+                'success'
+            );
+        } catch (error) {
+            console.error('Lỗi ngừng kinh doanh sản phẩm:', error);
+            showAlert(error.message, 'danger');
+        }
+    };
 
   const handleExportCSV = () => {
     const headers = 'id,sku,name,price,category_id,brand_id,status,image_url,created_at,updated_at\n';
@@ -414,74 +473,161 @@ export default function AdminDashboard() {
     setShowCategoryModal(true);
   };
 
-  const handleSubmitCategory = (e) => {
+  const handleSubmitCategory = async (e) => {
     e.preventDefault();
+
     const form = e.currentTarget;
 
-    if (form.checkValidity() === false) {
+    if (!form.checkValidity()) {
       e.stopPropagation();
       setCategoryValidated(true);
       return;
     }
 
-    const trimmedName = categoryFormData.name.trim();
-    const trimmedSlug = (categoryFormData.slug.trim() || generateSlug(trimmedName));
+    const accessToken = localStorage.getItem('accessToken');
 
-    // Kiểm tra UNIQUE slug trong bảng categories
-    const isDuplicateSlug = categories.some(
-      (c) => c.slug.toLowerCase() === trimmedSlug.toLowerCase() && c.id !== currentEditCategoryId
-    );
-    if (isDuplicateSlug) {
-      alert(`Lỗi Ràng Buộc UNIQUE: Đường dẫn slug "${trimmedSlug}" đã tồn tại trong bảng categories!`);
+    if (!accessToken) {
+      router.replace('/login');
       return;
     }
 
-    if (isEditingCategory && currentEditCategoryId) {
-      setCategories((prev) =>
-        prev.map((c) => {
-          if (c.id === currentEditCategoryId) {
-            return {
-              ...c,
-              name: trimmedName,
-              slug: trimmedSlug,
-              description: categoryFormData.description.trim(),
-              status: categoryFormData.status,
-            };
-          }
-          return c;
-        })
-      );
-      showAlert(`Đã UPDATE danh mục [${trimmedName}] (ID: ${currentEditCategoryId}) thành công!`, 'success');
-    } else {
-      const nextId = categories.length > 0 ? Math.max(...categories.map((c) => c.id)) + 1 : 1;
-      const newCategory = {
-        id: nextId,
-        name: trimmedName,
-        slug: trimmedSlug,
-        description: categoryFormData.description.trim(),
-        status: categoryFormData.status,
-      };
-      setCategories([...categories, newCategory]);
-      showAlert(`Đã INSERT danh mục mới [${trimmedName}] (ID: ${nextId}) vào bảng categories!`, 'success');
-    }
+    const categoryRequest = {
+      name: categoryFormData.name.trim(),
+      slug:
+          categoryFormData.slug.trim() ||
+          generateSlug(categoryFormData.name),
+      description: categoryFormData.description.trim(),
+      status: categoryFormData.status,
+    };
 
-    setShowCategoryModal(false);
-    setCategoryValidated(false);
+    const url = isEditingCategory
+        ? `${API_BASE_URL}/api/admin/categories/${currentEditCategoryId}`
+        : `${API_BASE_URL}/api/admin/categories`;
+
+    try {
+      setIsSubmittingCategory(true);
+
+      const response = await fetch(url, {
+        method: isEditingCategory ? 'PUT' : 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify(categoryRequest),
+      });
+
+      if (response.status === 401) {
+        localStorage.removeItem('currentUser');
+        localStorage.removeItem('accessToken');
+        router.replace('/login');
+        return;
+      }
+
+      if (response.status === 403) {
+        throw new Error('Bạn không có quyền quản lý danh mục.');
+      }
+
+      if (!response.ok) {
+        throw new Error(await getApiErrorMessage(response));
+      }
+
+      const savedCategory = await response.json();
+
+      if (isEditingCategory) {
+        setCategories((previousCategories) =>
+            previousCategories.map((category) =>
+                category.id === savedCategory.id
+                    ? savedCategory
+                    : category
+            )
+        );
+
+        showAlert(
+            `Đã cập nhật danh mục "${savedCategory.name}".`,
+            'success'
+        );
+      } else {
+        setCategories((previousCategories) => [
+          ...previousCategories,
+          savedCategory,
+        ]);
+
+        showAlert(
+            `Đã thêm danh mục "${savedCategory.name}".`,
+            'success'
+        );
+      }
+
+      setShowCategoryModal(false);
+      setCategoryValidated(false);
+    } catch (error) {
+      console.error('Lỗi lưu danh mục:', error);
+      showAlert(error.message, 'danger');
+    } finally {
+      setIsSubmittingCategory(false);
+    }
   };
 
-  const handleDeleteCategory = (id, name) => {
-    // Kiểm tra ràng buộc khóa ngoại fk_products_category
-    const refCount = countProductsByCat(id);
-    if (refCount > 0) {
-      alert(
-        `Lỗi Ràng Buộc Khóa Ngoại (CONSTRAINT fk_products_category):\n\nKhông thể xóa danh mục "${name}" (ID: ${id}) vì đang có ${refCount} sản phẩm thuộc danh mục này!\n\nHãy sửa hoặc chuyển danh mục cho các sản phẩm đó trước khi xóa.`
-      );
+  const handleDeleteCategory = async (id, name) => {
+    const confirmed = window.confirm(
+        `Bạn có chắc muốn ngừng hoạt động danh mục "${name}" không?`
+    );
+
+    if (!confirmed) {
       return;
     }
 
-    if (window.confirm(`Xác nhận DELETE FROM categories WHERE id = ${id}?`)) {
-      setCategories((prev) => prev.filter((c) => c.id !== id));
-      showAlert(`Đã xóa danh mục ID: ${id} (${name}) khỏi bảng categories!`, 'danger');
+    const accessToken = localStorage.getItem('accessToken');
+
+    if (!accessToken) {
+      router.replace('/login');
+      return;
+    }
+
+    try {
+      const response = await fetch(
+          `${API_BASE_URL}/api/admin/categories/${id}`,
+          {
+            method: 'DELETE',
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+            },
+          }
+      );
+
+      if (response.status === 401) {
+        localStorage.removeItem('currentUser');
+        localStorage.removeItem('accessToken');
+        router.replace('/login');
+        return;
+      }
+
+      if (response.status === 403) {
+        throw new Error('Bạn không có quyền quản lý danh mục.');
+      }
+
+      if (!response.ok) {
+        throw new Error(await getApiErrorMessage(response));
+      }
+
+      setCategories((previousCategories) =>
+          previousCategories.map((category) =>
+              category.id === id
+                  ? {
+                    ...category,
+                    status: 'INACTIVE',
+                  }
+                  : category
+          )
+      );
+
+      showAlert(
+          `Danh mục "${name}" đã chuyển sang INACTIVE.`,
+          'success'
+      );
+    } catch (error) {
+      console.error('Lỗi ngừng hoạt động danh mục:', error);
+      showAlert(error.message, 'danger');
     }
   };
 
@@ -528,83 +674,159 @@ export default function AdminDashboard() {
     setShowBrandModal(true);
   };
 
-  const handleSubmitBrand = (e) => {
+  const handleSubmitBrand = async (e) => {
     e.preventDefault();
+
     const form = e.currentTarget;
 
-    if (form.checkValidity() === false) {
+    if (!form.checkValidity()) {
       e.stopPropagation();
       setBrandValidated(true);
       return;
     }
 
-    const trimmedName = brandFormData.name.trim();
-    const trimmedSlug = (brandFormData.slug.trim() || generateSlug(trimmedName));
+    const accessToken = localStorage.getItem('accessToken');
 
-    // Kiểm tra UNIQUE name
-    const isDuplicateName = brands.some(
-      (b) => b.name.toLowerCase() === trimmedName.toLowerCase() && b.id !== currentEditBrandId
-    );
-    if (isDuplicateName) {
-      alert(`Lỗi Ràng Buộc UNIQUE: Tên thương hiệu "${trimmedName}" đã tồn tại trong bảng brands!`);
+    if (!accessToken) {
+      router.replace('/login');
       return;
     }
 
-    // Kiểm tra UNIQUE slug
-    const isDuplicateSlug = brands.some(
-      (b) => b.slug.toLowerCase() === trimmedSlug.toLowerCase() && b.id !== currentEditBrandId
-    );
-    if (isDuplicateSlug) {
-      alert(`Lỗi Ràng Buộc UNIQUE: Đường dẫn slug "${trimmedSlug}" đã tồn tại trong bảng brands!`);
-      return;
-    }
+    const brandRequest = {
+      name: brandFormData.name.trim(),
+      slug:
+          brandFormData.slug.trim() ||
+          generateSlug(brandFormData.name),
+      logoUrl: brandFormData.logo_url.trim(),
+      status: brandFormData.status,
+    };
 
-    if (isEditingBrand && currentEditBrandId) {
-      setBrands((prev) =>
-        prev.map((b) => {
-          if (b.id === currentEditBrandId) {
-            return {
-              ...b,
-              name: trimmedName,
-              slug: trimmedSlug,
-              logo_url: brandFormData.logo_url.trim(),
-              status: brandFormData.status,
-            };
-          }
-          return b;
-        })
-      );
-      showAlert(`Đã UPDATE thương hiệu [${trimmedName}] (ID: ${currentEditBrandId}) thành công!`, 'success');
-    } else {
-      const nextId = brands.length > 0 ? Math.max(...brands.map((b) => b.id)) + 1 : 1;
-      const newBrand = {
-        id: nextId,
-        name: trimmedName,
-        slug: trimmedSlug,
-        logo_url: brandFormData.logo_url.trim() || 'https://upload.wikimedia.org/wikipedia/commons/a/ac/Default_pfp.jpg',
-        status: brandFormData.status,
-      };
-      setBrands([...brands, newBrand]);
-      showAlert(`Đã INSERT thương hiệu mới [${trimmedName}] (ID: ${nextId}) vào bảng brands!`, 'success');
-    }
+    const url = isEditingBrand
+        ? `${API_BASE_URL}/api/admin/brands/${currentEditBrandId}`
+        : `${API_BASE_URL}/api/admin/brands`;
 
-    setShowBrandModal(false);
-    setBrandValidated(false);
+    try {
+      setIsSubmittingBrand(true);
+
+      const response = await fetch(url, {
+        method: isEditingBrand ? 'PUT' : 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify(brandRequest),
+      });
+
+      if (response.status === 401) {
+        localStorage.removeItem('currentUser');
+        localStorage.removeItem('accessToken');
+        router.replace('/login');
+        return;
+      }
+
+      if (response.status === 403) {
+        throw new Error('Bạn không có quyền quản lý thương hiệu.');
+      }
+
+      if (!response.ok) {
+        throw new Error(await getApiErrorMessage(response));
+      }
+
+      const savedBrand = mapBrandFromApi(await response.json());
+
+      if (isEditingBrand) {
+        setBrands((previousBrands) =>
+            previousBrands.map((brand) =>
+                brand.id === savedBrand.id ? savedBrand : brand
+            )
+        );
+
+        showAlert(
+            `Đã cập nhật thương hiệu "${savedBrand.name}".`,
+            'success'
+        );
+      } else {
+        setBrands((previousBrands) => [
+          ...previousBrands,
+          savedBrand,
+        ]);
+
+        showAlert(
+            `Đã thêm thương hiệu "${savedBrand.name}".`,
+            'success'
+        );
+      }
+
+      setShowBrandModal(false);
+      setBrandValidated(false);
+    } catch (error) {
+      console.error('Lỗi lưu thương hiệu:', error);
+      showAlert(error.message, 'danger');
+    } finally {
+      setIsSubmittingBrand(false);
+    }
   };
 
-  const handleDeleteBrand = (id, name) => {
-    // Kiểm tra ràng buộc khóa ngoại fk_products_brand
-    const refCount = countProductsByBrand(id);
-    if (refCount > 0) {
-      alert(
-        `Lỗi Ràng Buộc Khóa Ngoại (CONSTRAINT fk_products_brand):\n\nKhông thể xóa thương hiệu "${name}" (ID: ${id}) vì đang có ${refCount} sản phẩm liên kết với hãng này!\n\nHãy sửa hoặc chuyển thương hiệu cho các sản phẩm đó trước khi xóa.`
-      );
+  const handleDeleteBrand = async (id, name) => {
+    const confirmed = window.confirm(
+        `Bạn có chắc muốn ngừng hoạt động thương hiệu "${name}" không?`
+    );
+
+    if (!confirmed) {
       return;
     }
 
-    if (window.confirm(`Xác nhận DELETE FROM brands WHERE id = ${id}?`)) {
-      setBrands((prev) => prev.filter((c) => c.id !== id));
-      showAlert(`Đã xóa thương hiệu ID: ${id} (${name}) khỏi bảng brands!`, 'danger');
+    const accessToken = localStorage.getItem('accessToken');
+
+    if (!accessToken) {
+      router.replace('/login');
+      return;
+    }
+
+    try {
+      const response = await fetch(
+          `${API_BASE_URL}/api/admin/brands/${id}`,
+          {
+            method: 'DELETE',
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+            },
+          }
+      );
+
+      if (response.status === 401) {
+        localStorage.removeItem('currentUser');
+        localStorage.removeItem('accessToken');
+        router.replace('/login');
+        return;
+      }
+
+      if (response.status === 403) {
+        throw new Error('Bạn không có quyền quản lý thương hiệu.');
+      }
+
+      if (!response.ok) {
+        throw new Error(await getApiErrorMessage(response));
+      }
+
+      setBrands((previousBrands) =>
+          previousBrands.map((brand) =>
+              brand.id === id
+                  ? {
+                    ...brand,
+                    status: 'INACTIVE',
+                  }
+                  : brand
+          )
+      );
+
+      showAlert(
+          `Thương hiệu "${name}" đã chuyển sang INACTIVE.`,
+          'success'
+      );
+    } catch (error) {
+      console.error('Lỗi ngừng hoạt động thương hiệu:', error);
+      showAlert(error.message, 'danger');
     }
   };
 
@@ -698,16 +920,6 @@ export default function AdminDashboard() {
             <Link href="/login" className="btn btn-primary px-4 fw-semibold">
               <i className="bi bi-box-arrow-in-right me-1"></i> Đăng nhập Admin
             </Link>
-            <button
-              onClick={() => {
-                const mockAdmin = { id: 1, name: 'Nguyễn Quản Trị', email: 'admin@techstore.vn', role: 'ADMIN' };
-                localStorage.setItem('adminUser', JSON.stringify(mockAdmin));
-                setCurrentUser(mockAdmin);
-              }}
-              className="btn btn-outline-secondary px-3"
-            >
-              Kích hoạt Demo
-            </button>
           </div>
         </div>
       </div>
@@ -1256,13 +1468,18 @@ export default function AdminDashboard() {
                               >
                                 <i className="bi bi-pencil-square"></i>
                               </button>
-                              <button
-                                onClick={() => handleDeleteProduct(p.id, p.sku, p.name)}
-                                className="btn btn-light text-danger border"
-                                title="Xóa"
-                              >
-                                <i className="bi bi-trash"></i>
-                              </button>
+                                <button
+                                    onClick={() => handleDeleteProduct(p.id, p.sku, p.name)}
+                                    className="btn btn-light text-warning border"
+                                    title={
+                                        p.status === 'INACTIVE'
+                                            ? 'Sản phẩm đã ngừng kinh doanh'
+                                            : 'Ngừng kinh doanh'
+                                    }
+                                    disabled={p.status === 'INACTIVE'}
+                                >
+                                    <i className="bi bi-pause-circle"></i>
+                                </button>
                             </div>
                           </td>
                         </tr>
@@ -1408,12 +1625,24 @@ export default function AdminDashboard() {
                                 >
                                   <i className="bi bi-pencil-square"></i>
                                 </button>
+                                {/*<button*/}
+                                {/*  onClick={() => handleDeleteCategory(c.id, c.name)}*/}
+                                {/*  className="btn btn-light text-danger border"*/}
+                                {/*  title="Xóa danh mục"*/}
+                                {/*>*/}
+                                {/*  <i className="bi bi-trash"></i>*/}
+                                {/*</button>*/}
                                 <button
-                                  onClick={() => handleDeleteCategory(c.id, c.name)}
-                                  className="btn btn-light text-danger border"
-                                  title="Xóa danh mục"
+                                    onClick={() => handleDeleteCategory(c.id, c.name)}
+                                    className="btn btn-light text-warning border"
+                                    title={
+                                      c.status === 'INACTIVE'
+                                          ? 'Danh mục đã ngừng hoạt động'
+                                          : 'Ngừng hoạt động danh mục'
+                                    }
+                                    disabled={c.status === 'INACTIVE'}
                                 >
-                                  <i className="bi bi-trash"></i>
+                                  <i className="bi bi-pause-circle"></i>
                                 </button>
                               </div>
                             </td>
@@ -1571,12 +1800,24 @@ export default function AdminDashboard() {
                                 >
                                   <i className="bi bi-pencil-square"></i>
                                 </button>
+                                {/*<button*/}
+                                {/*  onClick={() => handleDeleteBrand(b.id, b.name)}*/}
+                                {/*  className="btn btn-light text-danger border"*/}
+                                {/*  title="Xóa thương hiệu"*/}
+                                {/*>*/}
+                                {/*  <i className="bi bi-trash"></i>*/}
+                                {/*</button>*/}
                                 <button
-                                  onClick={() => handleDeleteBrand(b.id, b.name)}
-                                  className="btn btn-light text-danger border"
-                                  title="Xóa thương hiệu"
+                                    onClick={() => handleDeleteBrand(b.id, b.name)}
+                                    className="btn btn-light text-warning border"
+                                    title={
+                                      b.status === 'INACTIVE'
+                                          ? 'Thương hiệu đã ngừng hoạt động'
+                                          : 'Ngừng hoạt động thương hiệu'
+                                    }
+                                    disabled={b.status === 'INACTIVE'}
                                 >
-                                  <i className="bi bi-trash"></i>
+                                  <i className="bi bi-pause-circle"></i>
                                 </button>
                               </div>
                             </td>
@@ -1767,9 +2008,22 @@ export default function AdminDashboard() {
                   >
                     Hủy bỏ
                   </button>
-                  <button type="submit" className="btn btn-primary btn-sm px-4 fw-bold shadow-sm">
-                    <i className="bi bi-check-lg me-1"></i>
-                    {isEditingProduct ? 'Cập Nhật Bản Ghi' : 'Lưu Vào Database'}
+                  <button
+                      type="submit"
+                      className="btn btn-primary btn-sm px-4 fw-bold shadow-sm"
+                      disabled={isSubmittingProduct}
+                  >
+                    {isSubmittingProduct ? (
+                        <>
+                          <span className="spinner-border spinner-border-sm me-2"></span>
+                          Đang lưu...
+                        </>
+                    ) : (
+                        <>
+                          <i className="bi bi-check-lg me-1"></i>
+                          {isEditingProduct ? 'Cập Nhật Sản Phẩm' : 'Thêm Sản Phẩm'}
+                        </>
+                    )}
                   </button>
                 </div>
               </form>
@@ -1883,9 +2137,24 @@ export default function AdminDashboard() {
                   >
                     Hủy bỏ
                   </button>
-                  <button type="submit" className="btn btn-success btn-sm px-4 fw-bold shadow-sm">
-                    <i className="bi bi-check-lg me-1"></i>
-                    {isEditingCategory ? 'Cập Nhật Danh Mục' : 'Lưu Danh Mục'}
+                  <button
+                      type="submit"
+                      className="btn btn-success btn-sm px-4 fw-bold shadow-sm"
+                      disabled={isSubmittingCategory}
+                  >
+                    {isSubmittingCategory ? (
+                        <>
+                          <span className="spinner-border spinner-border-sm me-2"></span>
+                          Đang lưu...
+                        </>
+                    ) : (
+                        <>
+                          <i className="bi bi-check-lg me-1"></i>
+                          {isEditingCategory
+                              ? 'Cập Nhật Danh Mục'
+                              : 'Thêm Danh Mục'}
+                        </>
+                    )}
                   </button>
                 </div>
               </form>
@@ -2013,9 +2282,24 @@ export default function AdminDashboard() {
                   >
                     Hủy bỏ
                   </button>
-                  <button type="submit" className="btn btn-info text-white btn-sm px-4 fw-bold shadow-sm">
-                    <i className="bi bi-check-lg me-1"></i>
-                    {isEditingBrand ? 'Cập Nhật Thương Hiệu' : 'Lưu Thương Hiệu'}
+                  <button
+                      type="submit"
+                      className="btn btn-info text-white btn-sm px-4 fw-bold shadow-sm"
+                      disabled={isSubmittingBrand}
+                  >
+                    {isSubmittingBrand ? (
+                        <>
+                          <span className="spinner-border spinner-border-sm me-2"></span>
+                          Đang lưu...
+                        </>
+                    ) : (
+                        <>
+                          <i className="bi bi-check-lg me-1"></i>
+                          {isEditingBrand
+                              ? 'Cập Nhật Thương Hiệu'
+                              : 'Thêm Thương Hiệu'}
+                        </>
+                    )}
                   </button>
                 </div>
               </form>
