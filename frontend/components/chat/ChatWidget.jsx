@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
 import { useChat } from "@/hooks/useChat";
 import { recommend } from "@/lib/advisor-api";
 import styles from "./ChatWidget.module.css";
@@ -73,6 +74,7 @@ function formatMessage(text) {
 const VIEW = { WELCOME: "welcome", QUIZ: "quiz", RESULT: "result", CHAT: "chat" };
 
 export default function ChatWidget() {
+  const pathname = usePathname();
   const [open, setOpen]       = useState(false);
   const [view, setView]       = useState(VIEW.WELCOME);
   const [input, setInput]     = useState("");
@@ -151,6 +153,8 @@ export default function ChatWidget() {
   /* ══════════════════════════════════════════════
      FAB (nút nổi) khi chưa mở
   ══════════════════════════════════════════════ */
+  if (pathname?.startsWith('/admin') || pathname?.startsWith('/staff')) return null;
+
   if (!open) return (
     <div className={styles.fabWrapper}>
       <span className={styles.fabPulse}></span>

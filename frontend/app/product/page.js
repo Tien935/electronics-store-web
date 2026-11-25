@@ -1,12 +1,14 @@
 'use client';
 
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
-import { useState, useEffect, Suspense } from 'react';
-import { addToCart, readCart } from '../lib/cart';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useEffect, useState, Suspense } from 'react';
+import { addToCart, isUserLoggedIn } from '../lib/cart';
+import StoreHeader from '../../components/StoreHeader';
+import StoreFooter from '../../components/StoreFooter';
 
 const API_BASE_URL =
-    process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080';
+  process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080';
 
 const mapProductFromApi = (product) => ({
   ...product,
@@ -20,28 +22,21 @@ const mapProductFromApi = (product) => ({
 });
 
 function CellphoneSProductDetail() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const rawId = searchParams.get('id');
 
-// Sản phẩm lấy từ Catalog API
   const [product, setProduct] = useState(null);
   const [otherProducts, setOtherProducts] = useState([]);
   const [isLoadingProduct, setIsLoadingProduct] = useState(true);
   const [productError, setProductError] = useState('');
-
-// Database hiện chưa quản lý biến thể màu sắc
-  const selectedColor = 'Tiêu chuẩn';
-
-// Các state giao diện hiện có
-  const [cartCount, setCartCount] = useState(0);
   const [addedToast, setAddedToast] = useState(false);
-  const [selectedLocation, setSelectedLocation] = useState('Hà Nội');
+  const selectedColor = 'Tiêu chuẩn';
 
   useEffect(() => {
     const controller = new AbortController();
 
     const loadProductDetail = async () => {
-      // URL không có id hoặc id không phải số
       if (!rawId || Number.isNaN(Number(rawId))) {
         setProductError('Mã sản phẩm không hợp lệ.');
         setIsLoadingProduct(false);
@@ -52,63 +47,40 @@ function CellphoneSProductDetail() {
         setIsLoadingProduct(true);
         setProductError('');
 
-        // Gọi đồng thời API chi tiết và danh sách sản phẩm ACTIVE
-        const [detailResponse, productsResponse] =
-            await Promise.all([
-              fetch(`${API_BASE_URL}/api/products/${rawId}`, {
-                signal: controller.signal,
-              }),
-              fetch(`${API_BASE_URL}/api/products`, {
-                signal: controller.signal,
-              }),
-            ]);
+        const [detailResponse, productsResponse] = await Promise.all([
+          fetch(`${API_BASE_URL}/api/products/${rawId}`, {
+            signal: controller.signal,
+          }),
+          fetch(`${API_BASE_URL}/api/products`, {
+            signal: controller.signal,
+          }),
+        ]);
 
         if (detailResponse.status === 404) {
           throw new Error('Không tìm thấy sản phẩm.');
         }
-
         if (!detailResponse.ok) {
-          throw new Error(
-              'Không thể tải thông tin chi tiết sản phẩm.'
-          );
+          throw new Error('Không thể tải thông tin chi tiết sản phẩm.');
         }
-
         if (!productsResponse.ok) {
-          throw new Error(
-              'Không thể tải danh sách sản phẩm tương tự.'
-          );
+          throw new Error('Không thể tải danh sách sản phẩm tương tự.');
         }
 
-        const [detailData, productsData] =
-            await Promise.all([
-              detailResponse.json(),
-              productsResponse.json(),
-            ]);
-
-        const mappedProduct =
-            mapProductFromApi(detailData);
-
-        const mappedProducts =
-            productsData.map(mapProductFromApi);
+        const [detailData, productsData] = await Promise.all([
+          detailResponse.json(),
+          productsResponse.json(),
+        ]);
+        const mappedProduct = mapProductFromApi(detailData);
+        const mappedProducts = productsData.map(mapProductFromApi);
 
         setProduct(mappedProduct);
-
         setOtherProducts(
-            mappedProducts.filter(
-                (item) => item.id !== mappedProduct.id
-            )
+          mappedProducts.filter((item) => item.id !== mappedProduct.id)
         );
       } catch (error) {
         if (error.name !== 'AbortError') {
-          console.error(
-              'Lỗi tải chi tiết sản phẩm:',
-              error
-          );
-
-          setProductError(
-              error.message ||
-              'Đã xảy ra lỗi khi tải sản phẩm.'
-          );
+          console.error('Lỗi tải chi tiết sản phẩm:', error);
+          setProductError(error.message || 'Đã xảy ra lỗi khi tải sản phẩm.');
         }
       } finally {
         if (!controller.signal.aborted) {
@@ -118,175 +90,50 @@ function CellphoneSProductDetail() {
     };
 
     loadProductDetail();
-
     return () => controller.abort();
   }, [rawId]);
 
-  useEffect(() => {
-    const updateCount = () => setCartCount(readCart().reduce((sum, item) => sum + item.quantity, 0));
-    updateCount();
-    window.addEventListener('cart-updated', updateCount);
-    window.addEventListener('storage', updateCount);
-    return () => {
-      window.removeEventListener('cart-updated', updateCount);
-      window.removeEventListener('storage', updateCount);
-    };
-  }, []);
-
   const handleAddToCart = () => {
+    if (!isUserLoggedIn()) {
+      router.push('/login');
+      return;
+    }
     addToCart(product, selectedColor);
     setAddedToast(true);
-    setTimeout(() => setAddedToast(false), 3000);
+    window.setTimeout(() => setAddedToast(false), 3000);
   };
 
   if (isLoadingProduct) {
     return (
-        <div className="min-vh-100 d-flex flex-column align-items-center justify-content-center bg-light">
-          <div
-              className="spinner-border text-danger"
-              role="status"
-          >
-        <span className="visually-hidden">
-          Đang tải...
-        </span>
-          </div>
-
-          <p className="text-muted mt-3 mb-0">
-            Đang tải thông tin sản phẩm...
-          </p>
+      <div className="min-vh-100 d-flex flex-column align-items-center justify-content-center bg-light">
+        <div className="spinner-border text-danger" role="status">
+          <span className="visually-hidden">Đang tải...</span>
         </div>
+        <p className="text-muted mt-3 mb-0">Đang tải thông tin sản phẩm...</p>
+      </div>
     );
   }
 
   if (productError || !product) {
     return (
-        <div className="min-vh-100 d-flex align-items-center justify-content-center bg-light p-3">
-          <div
-              className="card border-0 shadow-sm p-4 text-center"
-              style={{ maxWidth: '480px', width: '100%' }}
-          >
-            <i className="bi bi-exclamation-circle text-danger fs-1"></i>
-
-            <h5 className="fw-bold mt-3">
-              Không thể hiển thị sản phẩm
-            </h5>
-
-            <p className="text-muted">
-              {productError || 'Sản phẩm không tồn tại.'}
-            </p>
-
-            <Link href="/" className="btn btn-danger">
-              <i className="bi bi-arrow-left me-2"></i>
-              Quay về trang chủ
-            </Link>
-          </div>
+      <div className="min-vh-100 d-flex align-items-center justify-content-center bg-light p-3">
+        <div className="card border-0 shadow-sm p-4 text-center" style={{ maxWidth: '480px', width: '100%' }}>
+          <i className="bi bi-exclamation-circle text-danger fs-1"></i>
+          <h5 className="fw-bold mt-3">Không thể hiển thị sản phẩm</h5>
+          <p className="text-muted">{productError || 'Sản phẩm không tồn tại.'}</p>
+          <Link href="/" className="btn btn-danger">
+            <i className="bi bi-arrow-left me-2"></i>
+            Quay về trang chủ
+          </Link>
         </div>
+      </div>
     );
   }
 
   return (
     <div style={{ backgroundColor: '#f4f6f8', minHeight: '100vh', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif', fontSize: '15px' }}>
       
-      {/* ===== 1. TOPBAR ===== */}
-      <div style={{ backgroundColor: '#e0052b', color: '#fff', fontSize: '13px', padding: '4px 0' }}>
-        <div className="container d-flex justify-content-between align-items-center">
-          <div>
-            <i className="bi bi-geo-alt-fill text-warning me-1"></i>
-            Xem giá và tồn kho tại: <strong>{selectedLocation}</strong>
-          </div>
-          <div className="d-none d-md-flex gap-4">
-            <span><i className="bi bi-telephone-fill text-warning me-1"></i>Hotline: <strong>1800.2097</strong> (Miễn phí)</span>
-            <span><i className="bi bi-truck text-warning me-1"></i>Giao nhanh 2h</span>
-            <span><i className="bi bi-shield-check text-warning me-1"></i>Bảo hành chính hãng 12 tháng</span>
-          </div>
-        </div>
-      </div>
-
-      {/* ===== 2. HEADER CELLPHONES CHÍNH ===== */}
-      <header style={{ backgroundColor: '#d70018', padding: '12px 0', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
-        <div className="container">
-          <div className="d-flex align-items-center justify-content-between gap-3">
-            
-            {/* Logo TechMart */}
-            <Link href="/" className="text-decoration-none d-flex align-items-center gap-2">
-              <div
-                style={{
-                  backgroundColor: '#fff',
-                  color: '#d70018',
-                  borderRadius: '10px',
-                  width: '46px',
-                  height: '46px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontWeight: '900',
-                  fontSize: '24px',
-                  boxShadow: '0 2px 6px rgba(0,0,0,0.15)'
-                }}
-              >
-                <i className="bi bi-phone-fill"></i>
-              </div>
-              <div style={{ lineHeight: '1.1' }}>
-                <span className="fw-black text-white d-block" style={{ fontWeight: '900', letterSpacing: '-0.5px', fontSize: '22px' }}>
-                  Tech<b className="text-warning">Mart</b>
-                </span>
-              </div>
-            </Link>
-
-            {/* Thanh tìm kiếm */}
-            <div className="d-none d-md-block flex-grow-1 mx-3" style={{ maxWidth: '480px' }}>
-              <div className="position-relative">
-                <input
-                  type="text"
-                  className="form-control"
-                  placeholder="Bạn cần tìm điện thoại, laptop, phụ kiện gì?..."
-                  style={{
-                    borderRadius: '10px',
-                    padding: '9px 40px 9px 15px',
-                    fontSize: '13px',
-                    border: 'none',
-                    boxShadow: '0 1px 4px rgba(0,0,0,0.1)'
-                  }}
-                />
-                <button
-                  type="button"
-                  className="btn p-0 position-absolute top-50 end-0 translate-middle-y me-3 text-secondary border-0"
-                >
-                  <i className="bi bi-search fs-6"></i>
-                </button>
-              </div>
-            </div>
-
-            {/* Cụm chức năng bên phải */}
-            <div className="d-flex align-items-center gap-2">
-              <Link
-                href="/admin"
-                className="btn btn-sm text-white d-none d-lg-flex align-items-center gap-1 px-3 py-2 fw-semibold"
-                style={{ backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: '10px', fontSize: '13px' }}
-              >
-                <i className="bi bi-speedometer2 fs-6"></i>
-                <span>Trang Admin</span>
-              </Link>
-
-              {/* Giỏ Hàng CellphoneS */}
-              <Link
-                href="/cart"
-                className="btn btn-sm text-white d-flex align-items-center gap-2 px-3 py-2 fw-semibold position-relative"
-                style={{ backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: '10px', fontSize: '13px', border: 'none' }}
-              >
-                <i className="bi bi-cart3 fs-5"></i>
-                <div className="text-start d-none d-sm-block" style={{ lineHeight: '1.1' }}>
-                  <span style={{ fontSize: '11px', display: 'block', opacity: 0.85 }}>Giỏ hàng</span>
-                  <span style={{ fontSize: '12px', fontWeight: 'bold' }}>{cartCount} món</span>
-                </div>
-                <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-warning text-dark">
-                  {cartCount}
-                </span>
-              </Link>
-            </div>
-          </div>
-        </div>
-      </header>
+      <StoreHeader />
 
       {/* ===== 3. BREADCRUMB CELLPHONES ===== */}
       <div style={{ backgroundColor: '#fff', borderBottom: '1px solid #ebebeb', padding: '8px 0', fontSize: '13px' }}>
@@ -446,6 +293,8 @@ function CellphoneSProductDetail() {
                   </div>
                 </div>
 
+
+
                 {/* 4. Khối Khuyến Mại Hộp Quà Đặc Trưng CellphoneS */}
                 <div
                   className="rounded-3 p-3 mb-3 position-relative"
@@ -482,22 +331,6 @@ function CellphoneSProductDetail() {
                   </ul>
                 </div>
 
-                {/* 5. Vị trí và số lượng cửa hàng còn hàng */}
-                <div className="p-2 mb-3 rounded-2 bg-light border d-flex align-items-center justify-content-between text-muted" style={{ fontSize: '12px' }}>
-                  <div>
-                    <i className="bi bi-shop me-1 text-danger"></i>
-                    Có <strong>18 cửa hàng</strong> tại <strong>{selectedLocation}</strong> sẵn hàng giao ngay.
-                  </div>
-                  <select
-                    className="form-select form-select-sm border-0 bg-transparent fw-bold text-danger w-auto"
-                    value={selectedLocation}
-                    onChange={(e) => setSelectedLocation(e.target.value)}
-                  >
-                    <option value="Hà Nội">Khu vực Hà Nội</option>
-                    <option value="TP. Hồ Chí Minh">Khu vực TP. Hồ Chí Minh</option>
-                    <option value="Đà Nẵng">Khu vực Đà Nẵng</option>
-                  </select>
-                </div>
 
                 {/* 6. Cụm Nút Mua Hàng & Trả Góp CellphoneS */}
                 <div className="d-flex flex-column gap-2">
@@ -601,7 +434,17 @@ function CellphoneSProductDetail() {
                     </tr>
                     <tr>
                       <td className="text-muted py-2">Trạng thái:</td>
-                      <td className="fw-semibold text-success py-2">{product.status}</td>
+                      <td className="py-2">
+                        {product.status === 'ACTIVE' ? (
+                            <span className="fw-bold text-success">
+        <i className="bi bi-check-circle-fill me-1"></i>Còn hàng
+      </span>
+                        ) : (
+                            <span className="fw-bold text-danger">
+        <i className="bi bi-x-circle-fill me-1"></i>Hết hàng
+      </span>
+                        )}
+                      </td>
                     </tr>
                   </tbody>
                 </table>
@@ -672,57 +515,7 @@ function CellphoneSProductDetail() {
       </main>
 
       {/* ===== 7. FOOTER CHUỖI CỬA HÀNG CELLPHONES ===== */}
-      <footer className="bg-white border-top mt-5 pt-4 pb-3" style={{ fontSize: '12px', color: '#666' }}>
-        <div className="container">
-          <div className="row g-4">
-            <div className="col-12 col-md-3">
-              <h6 className="fw-bold text-dark mb-2" style={{ fontSize: '13px' }}>TỔNG ĐÀI HỖ TRỢ (MIỄN PHÍ)</h6>
-              <ul className="list-unstyled mb-0 lh-lg">
-                <li>Gọi mua hàng: <strong className="text-danger">1800.2097</strong> (7h30 - 22h00)</li>
-                <li>Khiếu nại: <strong className="text-danger">1800.2063</strong> (8h00 - 21h30)</li>
-                <li>Bảo hành: <strong className="text-danger">1800.2064</strong> (8h00 - 21h00)</li>
-              </ul>
-            </div>
-
-            <div className="col-6 col-md-3">
-              <h6 className="fw-bold text-dark mb-2" style={{ fontSize: '13px' }}>THÔNG TIN VÀ CHÍNH SÁCH</h6>
-              <ul className="list-unstyled mb-0 lh-lg">
-                <li>Mua hàng và thanh toán online</li>
-                <li>Chính sách giao hàng</li>
-                <li>Tra cứu hóa đơn điện tử</li>
-                <li>Chính sách bảo hành chính hãng</li>
-              </ul>
-            </div>
-
-            <div className="col-6 col-md-3">
-              <h6 className="fw-bold text-dark mb-2" style={{ fontSize: '13px' }}>DỊCH VỤ VÀ TIỆN ÍCH</h6>
-              <ul className="list-unstyled mb-0 lh-lg">
-                <li>Khách hàng thành viên Smember</li>
-                <li>Trung tâm bảo hành ủy quyền CareS</li>
-                <li>Thu cũ đổi mới trợ giá cao</li>
-                <li>Hợp tác bán hàng doanh nghiệp</li>
-              </ul>
-            </div>
-
-            <div className="col-12 col-md-3">
-              <h6 className="fw-bold text-dark mb-2" style={{ fontSize: '13px' }}>KẾT NỐI VỚI TECHMART</h6>
-              <p className="mb-2">Hệ thống 150 cửa hàng trải dài trên toàn quốc luôn sẵn sàng phục vụ quý khách.</p>
-              <div className="d-flex gap-2">
-                <span className="badge bg-light text-dark border p-2">Visa</span>
-                <span className="badge bg-light text-dark border p-2">MasterCard</span>
-                <span className="badge bg-light text-dark border p-2">MoMo</span>
-                <span className="badge bg-light text-dark border p-2">VNPAY</span>
-              </div>
-            </div>
-          </div>
-
-          <hr className="my-3" />
-          <div className="d-flex justify-content-between align-items-center flex-wrap small text-muted">
-            <span>© 2026 TechMart - Hệ thống bán lẻ điện thoại, máy tính, thiết bị di động chính hãng.</span>
-            <span>Dữ liệu quản lý đồng bộ theo Database categories - brands - products.</span>
-          </div>
-        </div>
-      </footer>
+      <StoreFooter />
     </div>
   );
 }
@@ -734,4 +527,6 @@ export default function ProductDetailPage() {
     </Suspense>
   );
 }
+
+
 

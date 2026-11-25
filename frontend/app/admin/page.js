@@ -3,9 +3,11 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useMemo } from 'react';
+import { DEMO_ORDERS, DEMO_ORDER_ITEMS, DEMO_ORDER_STATUS_HISTORY, DEMO_VOUCHERS, ORDER_STATUS_LABELS, ORDER_STATUS_BADGES, PAYMENT_METHOD_LABELS, PAYMENT_STATUS_LABELS, formatOrderDate, loadDemoOrderData, saveDemoOrderData } from '../lib/demo-orders';
+import BrandLogo from '../../components/BrandLogo';
 
 const API_BASE_URL =
-    process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080';
+  process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080';
 
 const mapProductFromApi = (product) => ({
   ...product,
@@ -20,21 +22,102 @@ const mapBrandFromApi = (brand) => ({
   ...brand,
   logo_url: brand.logoUrl,
 });
-
 export default function AdminDashboard() {
   const router = useRouter();
   const [currentUser, setCurrentUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
-  // Tab điều hướng: 'products' (chính), 'categories', 'brands'
+  // Tab điều hướng: 'products' (chính), 'categories', 'brands', 'users'
   const [activeTab, setActiveTab] = useState('products');
 
-  // ================= 1. DỮ LIỆU BẢNG CATEGORIES (THEO CSDL) ================
+  // Products, categories và brands được tải từ Catalog API thật.
+
+  // Dữ liệu demo tạm thời; Identity Service hiện chưa có API quản trị người dùng.
+  const initialUsers = [
+    {
+      id: 1,
+      email: 'admin@techmart.vn',
+      full_name: 'Admin',
+      phone: '0988123456',
+      role: 'ADMIN',
+      status: 'ACTIVE',
+      created_at: '2026-11-01 08:00:00',
+      updated_at: '2026-11-20 10:00:00',
+    },
+    {
+      id: 2,
+      email: 'staff01@techmart.vn',
+      full_name: 'Lê Văn Nhân Viên 1',
+      phone: '0977222333',
+      role: 'STAFF',
+      status: 'ACTIVE',
+      created_at: '2026-11-10 09:15:00',
+      updated_at: '2026-11-21 11:30:00',
+    },
+    {
+      id: 3,
+      email: 'staff02@techmart.vn',
+      full_name: 'Trần Thị Thu Ngân',
+      phone: '0912444555',
+      role: 'STAFF',
+      status: 'ACTIVE',
+      created_at: '2026-11-12 14:30:00',
+      updated_at: '2026-11-22 09:00:00',
+    },
+    {
+      id: 4,
+      email: 'customer01@gmail.com',
+      full_name: 'Hoàng Khách Hàng',
+      phone: '0905888999',
+      role: 'CUSTOMER',
+      status: 'ACTIVE',
+      created_at: '2026-11-15 16:45:00',
+      updated_at: '2026-11-22 10:15:00',
+    },
+    {
+      id: 5,
+      email: 'customer02@gmail.com',
+      full_name: 'Phạm Minh Khôi',
+      phone: '0933777888',
+      role: 'CUSTOMER',
+      status: 'INACTIVE',
+      created_at: '2026-11-16 11:20:00',
+      updated_at: '2026-11-23 15:40:00',
+    },
+  ];
 
   const [categories, setCategories] = useState([]);
   const [brands, setBrands] = useState([]);
   const [products, setProducts] = useState([]);
+  const [users, setUsers] = useState(initialUsers);
+  const [orders, setOrders] = useState(DEMO_ORDERS);
+  const [orderHistory, setOrderHistory] = useState(DEMO_ORDER_STATUS_HISTORY);
+  const [orderItems, setOrderItems] = useState(DEMO_ORDER_ITEMS);
+  const [vouchers, setVouchers] = useState(DEMO_VOUCHERS);
+  const [selectedOrder, setSelectedOrder] = useState(null);
+  const [orderSearchKeyword, setOrderSearchKeyword] = useState('');
+  const [orderStatusFilter, setOrderStatusFilter] = useState('ALL');
+  const [orderPaymentFilter, setOrderPaymentFilter] = useState('ALL');
+
+  // Bộ lọc & Tìm kiếm Users
+  const [userSearchKeyword, setUserSearchKeyword] = useState('');
+  const [userRoleFilter, setUserRoleFilter] = useState('ALL');
+  const [userStatusFilter, setUserStatusFilter] = useState('ALL');
+
+  // Modal Thêm / Sửa Users
+  const [showUserModal, setShowUserModal] = useState(false);
+  const [isEditingUser, setIsEditingUser] = useState(false);
+  const [currentEditUserId, setCurrentEditUserId] = useState(null);
+  const [userValidated, setUserValidated] = useState(false);
+  const [userFormData, setUserFormData] = useState({
+    email: '',
+    password: '',
+    full_name: '',
+    phone: '',
+    role: 'STAFF',
+    status: 'ACTIVE',
+  });
 
   // Bộ lọc & Tìm kiếm Products
   const [searchKeyword, setSearchKeyword] = useState('');
@@ -97,10 +180,29 @@ export default function AdminDashboard() {
   // Thông báo Toast alert
   const [alertNotice, setAlertNotice] = useState({ show: false, message: '', type: 'success' });
 
-  // Auth Guard: Kiểm tra quyền ADMIN
+  useEffect(() => {
+    const syncOrders = () => {
+      const data = loadDemoOrderData();
+      setOrders(data.orders);
+      setOrderItems(data.items);
+      setOrderHistory(data.history);
+      setVouchers(data.vouchers);
+    };
+    syncOrders();
+    window.addEventListener('orders-updated', syncOrders);
+    window.addEventListener('storage', syncOrders);
+    return () => {
+      window.removeEventListener('orders-updated', syncOrders);
+      window.removeEventListener('storage', syncOrders);
+    };
+  }, []);
+
+  // Nạp phiên đăng nhập và dữ liệu quản trị Catalog bằng JWT.
   useEffect(() => {
     const initializeAdminPage = async () => {
-      const savedUser = localStorage.getItem('currentUser');
+      const savedUser =
+        localStorage.getItem('currentUser') ||
+        localStorage.getItem('adminUser');
       const accessToken = localStorage.getItem('accessToken');
 
       if (!savedUser || !accessToken) {
@@ -110,37 +212,41 @@ export default function AdminDashboard() {
 
       try {
         const user = JSON.parse(savedUser);
+        const roles = Array.isArray(user.roles) ? user.roles : [];
+        const hasAdminRole = user.role === 'ADMIN' || roles.includes('ADMIN');
+        const hasStaffRole = user.role === 'STAFF' || roles.includes('STAFF');
 
-        if (!Array.isArray(user.roles) || !user.roles.includes('ADMIN')) {
-          setIsLoading(false);
+        if (hasStaffRole && !hasAdminRole) {
+          setCurrentUser(user);
+          router.replace('/staff/orders');
+          return;
+        }
+
+        if (!hasAdminRole) {
           return;
         }
 
         setCurrentUser(user);
 
         const [productsResponse, categoriesResponse, brandsResponse] =
-            await Promise.all([
-              fetch(`${API_BASE_URL}/api/admin/products`, {
-                headers: {
-                  Authorization: `Bearer ${accessToken}`,
-                },
-              }),
-              fetch(`${API_BASE_URL}/api/admin/categories`, {
-                headers: {
-                  Authorization: `Bearer ${accessToken}`,
-                },
-              }),
-              fetch(`${API_BASE_URL}/api/admin/brands`, {
-                headers: {
-                  Authorization: `Bearer ${accessToken}`,
-                },
-              }),
-            ]);
+          await Promise.all([
+            fetch(`${API_BASE_URL}/api/admin/products`, {
+              headers: { Authorization: `Bearer ${accessToken}` },
+            }),
+            fetch(`${API_BASE_URL}/api/admin/categories`, {
+              headers: { Authorization: `Bearer ${accessToken}` },
+            }),
+            fetch(`${API_BASE_URL}/api/admin/brands`, {
+              headers: { Authorization: `Bearer ${accessToken}` },
+            }),
+          ]);
 
         if (
-            productsResponse.status === 401 ||
-            productsResponse.status === 403
+          [productsResponse, categoriesResponse, brandsResponse].some(
+            (response) => response.status === 401 || response.status === 403
+          )
         ) {
+          localStorage.removeItem('adminUser');
           localStorage.removeItem('currentUser');
           localStorage.removeItem('accessToken');
           setCurrentUser(null);
@@ -148,11 +254,7 @@ export default function AdminDashboard() {
           return;
         }
 
-        if (
-            !productsResponse.ok ||
-            !categoriesResponse.ok ||
-            !brandsResponse.ok
-        ) {
+        if (!productsResponse.ok || !categoriesResponse.ok || !brandsResponse.ok) {
           throw new Error('Không thể tải dữ liệu Catalog.');
         }
 
@@ -167,7 +269,6 @@ export default function AdminDashboard() {
         setBrands(brandData.map(mapBrandFromApi));
       } catch (error) {
         console.error('Lỗi tải dữ liệu Catalog:', error);
-
         setAlertNotice({
           show: true,
           message: 'Không thể tải dữ liệu sản phẩm từ máy chủ.',
@@ -181,7 +282,12 @@ export default function AdminDashboard() {
     initializeAdminPage();
   }, [router]);
 
+  const userRoles = Array.isArray(currentUser?.roles) ? currentUser.roles : [];
+  const isAdmin = currentUser?.role === 'ADMIN' || userRoles.includes('ADMIN');
+  const isStaff = currentUser?.role === 'STAFF' || userRoles.includes('STAFF');
+
   const handleLogout = () => {
+    localStorage.removeItem('adminUser');
     localStorage.removeItem('currentUser');
     localStorage.removeItem('accessToken');
     router.replace('/login');
@@ -195,11 +301,9 @@ export default function AdminDashboard() {
   const getApiErrorMessage = async (response) => {
     try {
       const data = await response.json();
-
       if (data.fieldErrors && Object.keys(data.fieldErrors).length > 0) {
         return Object.values(data.fieldErrors).join(', ');
       }
-
       return data.message || data.error || 'Đã xảy ra lỗi khi gọi API.';
     } catch {
       return 'Không thể đọc phản hồi từ máy chủ.';
@@ -439,11 +543,11 @@ export default function AdminDashboard() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.setAttribute('download', `products_export_${new Date().toISOString().slice(0, 10)}.csv`);
+    link.setAttribute('download', `san-pham_${new Date().toISOString().slice(0, 10)}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    showAlert('Đã xuất dữ liệu bảng products thành công (file CSV)!', 'success');
+    showAlert('Đã xuất dữ liệu danh sách sản phẩm thành công (file CSV)!', 'success');
   };
 
   // ================= B. CRUD CATEGORIES =================
@@ -640,11 +744,11 @@ export default function AdminDashboard() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.setAttribute('download', `categories_export_${new Date().toISOString().slice(0, 10)}.csv`);
+    link.setAttribute('download', `danh-muc_${new Date().toISOString().slice(0, 10)}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    showAlert('Đã xuất dữ liệu bảng categories thành công (file CSV)!', 'success');
+    showAlert('Đã xuất dữ liệu danh mục thành công (file CSV)!', 'success');
   };
 
   // ================= C. CRUD BRANDS =================
@@ -839,11 +943,158 @@ export default function AdminDashboard() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.setAttribute('download', `brands_export_${new Date().toISOString().slice(0, 10)}.csv`);
+    link.setAttribute('download', `thuong-hieu_${new Date().toISOString().slice(0, 10)}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    showAlert('Đã xuất dữ liệu bảng brands thành công (file CSV)!', 'success');
+    showAlert('Đã xuất dữ liệu thương hiệu thành công (file CSV)!', 'success');
+  };
+
+  // CRUD người dùng tạm thời chỉ cập nhật state phía Frontend.
+  const handleOpenAddUser = () => {
+    setIsEditingUser(false);
+    setCurrentEditUserId(null);
+    setUserFormData({
+      email: '',
+      password: '',
+      full_name: '',
+      phone: '',
+      role: 'STAFF',
+      status: 'ACTIVE',
+    });
+    setUserValidated(false);
+    setShowUserModal(true);
+  };
+
+  const handleOpenEditUser = (u) => {
+    setIsEditingUser(true);
+    setCurrentEditUserId(u.id);
+    setUserFormData({
+      email: u.email,
+      password: '',
+      full_name: u.full_name,
+      phone: u.phone || '',
+      role: u.role,
+      status: u.status,
+    });
+    setUserValidated(false);
+    setShowUserModal(true);
+  };
+
+  const handleDeleteUser = (userId, email) => {
+    if (userId === 1) {
+      alert('Không thể xóa tài khoản Quản trị viên hệ thống gốc (ID: 1)!');
+      return;
+    }
+    if (confirm(`Bạn có chắc chắn muốn xóa tài khoản [${email}] (ID: ${userId}) khỏi hệ thống không?`)) {
+      setUsers((prev) => prev.filter((u) => u.id !== userId));
+      showAlert(`Đã xóa tài khoản [${email}] thành công!`, 'success');
+    }
+  };
+
+  const handleToggleUserStatus = (userId) => {
+    if (userId === 1) {
+      alert('Không thể vô hiệu hóa tài khoản Quản trị viên hệ thống gốc (ID: 1)!');
+      return;
+    }
+    setUsers((prev) =>
+      prev.map((u) => {
+        if (u.id === userId) {
+          const newStatus = u.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
+          showAlert(`Đã đổi trạng thái [${u.email}] sang ${newStatus === 'ACTIVE' ? 'Đang hoạt động' : 'Đã khóa'}!`, 'info');
+          return {
+            ...u,
+            status: newStatus,
+            updated_at: new Date().toISOString().slice(0, 19).replace('T', ' '),
+          };
+        }
+        return u;
+      })
+    );
+  };
+
+  const handleSubmitUser = (e) => {
+    e.preventDefault();
+    const form = e.currentTarget;
+    if (form.checkValidity() === false) {
+      e.stopPropagation();
+      setUserValidated(true);
+      return;
+    }
+
+    const trimmedEmail = userFormData.email.trim();
+    const trimmedFullName = userFormData.full_name.trim();
+
+    // Kiểm tra duy nhất email trong tài khoản
+    const isDuplicateEmail = users.some(
+      (u) => u.email.toLowerCase() === trimmedEmail.toLowerCase() && u.id !== currentEditUserId
+    );
+    if (isDuplicateEmail) {
+      alert(`Lỗi Ràng Buộc duy nhất: Email "${trimmedEmail}" đã tồn tại trong tài khoản!`);
+      return;
+    }
+
+    const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
+
+    if (isEditingUser && currentEditUserId) {
+      setUsers((prev) =>
+        prev.map((u) => {
+          if (u.id === currentEditUserId) {
+            return {
+              ...u,
+              email: trimmedEmail,
+              full_name: trimmedFullName,
+              phone: userFormData.phone.trim(),
+              role: userFormData.role,
+              status: userFormData.status,
+              updated_at: now,
+            };
+          }
+          return u;
+        })
+      );
+      showAlert(`Đã cập nhật thông tin tài khoản [${trimmedEmail}] (ID: ${currentEditUserId}) thành công!`, 'success');
+    } else {
+      const nextId = users.length > 0 ? Math.max(...users.map((u) => u.id)) + 1 : 1;
+      const newUser = {
+        id: nextId,
+        email: trimmedEmail,
+        full_name: trimmedFullName,
+        phone: userFormData.phone.trim(),
+        role: userFormData.role,
+        status: userFormData.status,
+        created_at: now,
+        updated_at: now,
+      };
+      setUsers([newUser, ...users]);
+      showAlert(`Đã thêm tài khoản [${trimmedEmail}] thành công!`, 'success');
+    }
+
+    setShowUserModal(false);
+  };
+
+  const handleExportUserCSV = () => {
+    const headers = ['id', 'email', 'full_name', 'phone', 'role', 'status', 'created_at', 'updated_at'];
+    const rows = filteredUsers.map((u) => [
+      u.id,
+      `"${u.email}"`,
+      `"${u.full_name}"`,
+      `"${u.phone || ''}"`,
+      u.role,
+      u.status,
+      `"${u.created_at}"`,
+      `"${u.updated_at}"`,
+    ]);
+    const csvContent = '\uFEFF' + [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `tai-khoan_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    showAlert('Đã xuất dữ liệu tài khoản thành công (file CSV)!', 'success');
   };
 
   // Lọc và sắp xếp Products
@@ -893,6 +1144,43 @@ export default function AdminDashboard() {
     });
   }, [brands, brandSearch, brandStatusFilter]);
 
+  // Lọc Users
+  const filteredUsers = useMemo(() => {
+    return users.filter((u) => {
+      const matchSearch =
+        u.email.toLowerCase().includes(userSearchKeyword.toLowerCase()) ||
+        u.full_name.toLowerCase().includes(userSearchKeyword.toLowerCase()) ||
+        (u.phone && u.phone.includes(userSearchKeyword.trim())) ||
+        String(u.id) === userSearchKeyword.trim();
+      const matchRole = userRoleFilter === 'ALL' || u.role === userRoleFilter;
+      const matchStatus = userStatusFilter === 'ALL' || u.status === userStatusFilter;
+      return matchSearch && matchRole && matchStatus;
+    });
+  }, [users, userSearchKeyword, userRoleFilter, userStatusFilter]);
+  const filteredOrders = useMemo(() => {
+    const keyword = orderSearchKeyword.trim().toLowerCase();
+    return orders.filter((order) => {
+      const matchesSearch = !keyword || order.order_code.toLowerCase().includes(keyword) || order.customer_name.toLowerCase().includes(keyword) || order.customer_phone.includes(keyword) || (order.customer_email || '').toLowerCase().includes(keyword);
+      const matchesStatus = orderStatusFilter === 'ALL' || order.status === orderStatusFilter;
+      const matchesPayment = orderPaymentFilter === 'ALL' || order.payment_method === orderPaymentFilter;
+      return matchesSearch && matchesStatus && matchesPayment;
+    });
+  }, [orders, orderSearchKeyword, orderStatusFilter, orderPaymentFilter]);
+  const handleOrderStatusChange = (orderId, status) => {
+    const currentOrder = orders.find((order) => order.id === orderId);
+    if (!currentOrder || currentOrder.status === status) return;
+    const now = new Date().toISOString();
+    const nextOrders = orders.map((order) => order.id === orderId ? { ...order, status, updated_at: now } : order);
+    const nextHistory = [...orderHistory, { id: Math.max(0, ...orderHistory.map((item) => item.id)) + 1, order_id: orderId, previous_status: currentOrder.status, current_status: status, action_event: 'UPDATE_STATUS', reason: null, changed_by: currentUser?.email || 'ADMIN', created_at: now }];
+    setOrders(nextOrders);
+    setOrderHistory(nextHistory);
+    saveDemoOrderData({ orders: nextOrders, items: orderItems, history: nextHistory, vouchers });
+    setSelectedOrder((order) => order?.id === orderId ? { ...order, status, updated_at: now } : order);
+    showAlert(`Đã cập nhật đơn ${currentOrder.order_code}: ${ORDER_STATUS_LABELS[status]}.`, 'success');
+  };
+
+  const orderStatusClass = ORDER_STATUS_BADGES;
+
   // Loading Screen
   if (isLoading) {
     return (
@@ -904,8 +1192,11 @@ export default function AdminDashboard() {
     );
   }
 
-  // Route Guard Screen: Khi chưa đăng nhập quyền ADMIN
-  if (!currentUser) {
+  // Chỉ Admin được vào khu vực quản trị.
+  if (currentUser && isStaff && !isAdmin) {
+    return <div className="min-vh-100 d-flex align-items-center justify-content-center bg-light text-muted">Đang chuyển đến trang nhân viên...</div>;
+  }
+  if (!currentUser || !isAdmin) {
     return (
       <div className="min-vh-100 d-flex align-items-center justify-content-center bg-light p-3">
         <div className="card shadow border-0 rounded-4 p-4 text-center" style={{ maxWidth: '480px' }}>
@@ -914,9 +1205,9 @@ export default function AdminDashboard() {
           </div>
           <h4 className="fw-bold text-dark">Yêu Cầu Quyền Quản Trị</h4>
           <p className="text-secondary small mb-4">
-            Bạn cần đăng nhập tài khoản có quyền <strong>ADMIN</strong> để truy cập bảng điều khiển cơ sở dữ liệu.
+            Vui lòng đăng nhập bằng tài khoản Admin để tiếp tục.
           </p>
-          <div className="d-flex justify-content-center gap-2">
+          <div className="d-flex justify-content-center">
             <Link href="/login" className="btn btn-primary px-4 fw-semibold">
               <i className="bi bi-box-arrow-in-right me-1"></i> Đăng nhập Admin
             </Link>
@@ -943,25 +1234,7 @@ export default function AdminDashboard() {
         {/* Sidebar Header / Brand */}
         <div className="p-3 border-bottom d-flex align-items-center justify-content-between">
           <div className="d-flex align-items-center gap-2 overflow-hidden">
-            <div
-              className="rounded-3 d-flex align-items-center justify-content-center text-white fw-bold shadow-sm"
-              style={{
-                width: '38px',
-                height: '38px',
-                background: 'linear-gradient(135deg, #0d6efd, #0b5ed7)',
-                flexShrink: 0,
-              }}
-            >
-              <i className="bi bi-cpu-fill fs-5"></i>
-            </div>
-            {sidebarOpen && (
-              <div className="text-truncate" style={{ lineHeight: '1.2' }}>
-                <span className="fw-bold fs-6 text-dark d-block">Admin Portal</span>
-                <span className="text-muted text-uppercase" style={{ fontSize: '10px', letterSpacing: '0.5px' }}>
-                  MySQL 3-Tables CRUD
-                </span>
-              </div>
-            )}
+            <BrandLogo tone="dark" showText={sidebarOpen} />
           </div>
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -975,7 +1248,8 @@ export default function AdminDashboard() {
         {/* Sidebar Navigation */}
         <div className="flex-grow-1 overflow-auto py-3">
           <ul className="nav flex-column px-2 gap-1">
-            <li className="nav-item">
+            {isAdmin && (
+              <li className="nav-item">
               <button
                 onClick={() => setActiveTab('products')}
                 className={`nav-link rounded-3 px-3 py-2 fw-semibold d-flex align-items-center gap-3 w-100 text-start border-0 ${
@@ -986,8 +1260,10 @@ export default function AdminDashboard() {
                 {sidebarOpen && <span>Sản phẩm ({products.length})</span>}
               </button>
             </li>
+            )}
 
-            <li className="nav-item">
+            {isAdmin && (
+              <li className="nav-item">
               <button
                 onClick={() => setActiveTab('categories')}
                 className={`nav-link rounded-3 px-3 py-2 fw-semibold d-flex align-items-center gap-3 w-100 text-start border-0 ${
@@ -998,8 +1274,10 @@ export default function AdminDashboard() {
                 {sidebarOpen && <span>Danh mục ({categories.length})</span>}
               </button>
             </li>
+            )}
 
-            <li className="nav-item">
+            {isAdmin && (
+              <li className="nav-item">
               <button
                 onClick={() => setActiveTab('brands')}
                 className={`nav-link rounded-3 px-3 py-2 fw-semibold d-flex align-items-center gap-3 w-100 text-start border-0 ${
@@ -1010,8 +1288,34 @@ export default function AdminDashboard() {
                 {sidebarOpen && <span>Thương hiệu ({brands.length})</span>}
               </button>
             </li>
+            )}
 
-            <li className="nav-item pt-2 border-top mt-2">
+            {isAdmin && (
+              <li className="nav-item">
+              <button
+                onClick={() => setActiveTab('users')}
+                className={`nav-link rounded-3 px-3 py-2 fw-semibold d-flex align-items-center gap-3 w-100 text-start border-0 ${
+                  activeTab === 'users' ? 'active bg-warning-subtle text-dark' : 'text-secondary bg-transparent hover-primary'
+                }`}
+              >
+                <i className={`bi bi-people-fill fs-5 ${activeTab === 'users' ? 'text-warning' : 'text-secondary'}`}></i>
+                {sidebarOpen && <span>Tài khoản ({users.length})</span>}
+              </button>
+            </li>
+            )}
+            <li className="nav-item">
+              <button
+                onClick={() => setActiveTab('orders')}
+                className={`nav-link rounded-3 px-3 py-2 fw-semibold d-flex align-items-center gap-3 w-100 text-start border-0 ${
+                  activeTab === 'orders' ? 'active bg-danger-subtle text-danger' : 'text-secondary bg-transparent hover-primary'
+                }`}
+              >
+                <i className="bi bi-receipt fs-5"></i>
+                {sidebarOpen && <span>Đơn hàng ({orders.length})</span>}
+              </button>
+            </li>
+            {isAdmin && (
+              <li className="nav-item pt-2 border-top mt-2">
               <div className="px-3 pb-1 text-uppercase text-muted" style={{ fontSize: '10px' }}>
                 {sidebarOpen && 'Thao tác nhanh'}
               </div>
@@ -1036,7 +1340,15 @@ export default function AdminDashboard() {
                 <i className="bi bi-plus-circle fs-5"></i>
                 {sidebarOpen && <span>+ Thêm Thương Hiệu</span>}
               </button>
+              <button
+                onClick={handleOpenAddUser}
+                className="nav-link rounded-3 px-3 py-2 text-warning fw-semibold d-flex align-items-center gap-3 w-100 text-start border-0 bg-transparent hover-primary"
+              >
+                <i className="bi bi-plus-circle fs-5"></i>
+                {sidebarOpen && <span>+ Thêm Nhân Viên</span>}
+              </button>
             </li>
+            )}
           </ul>
         </div>
 
@@ -1044,18 +1356,8 @@ export default function AdminDashboard() {
         <div className="p-3 border-top d-flex align-items-center justify-content-between">
           {sidebarOpen && (
             <div className="d-flex align-items-center gap-2">
-              <span className="badge bg-success-subtle text-success border border-success-subtle px-2 py-1">
-                ● 3 Tables CRUD Ready
-              </span>
             </div>
           )}
-          <button
-            onClick={handleLogout}
-            className="btn btn-sm btn-outline-danger border-0"
-            title="Đăng xuất khỏi hệ thống"
-          >
-            <i className="bi bi-power fs-5"></i>
-          </button>
         </div>
       </aside>
 
@@ -1066,7 +1368,7 @@ export default function AdminDashboard() {
           <div className="d-flex align-items-center gap-3">
             <span className="badge bg-light text-dark border px-3 py-2 fw-semibold">
               <i className="bi bi-database me-2 text-primary"></i>
-                Products - Categories - Brands
+                {isAdmin ? 'Sản phẩm - Danh mục - Thương hiệu - Tài khoản' : 'Khu vực quản lý đơn hàng'}
             </span>
           </div>
 
@@ -1076,18 +1378,17 @@ export default function AdminDashboard() {
               <i className="bi bi-shop me-1"></i>Xem Cửa Hàng
             </Link>
 
-            {/* User Profile */}
-            <div className="d-flex align-items-center gap-2 border-start ps-3">
-              <div
-                className="d-inline-flex align-items-center justify-content-center rounded-circle bg-primary text-white fw-bold shadow-sm"
-                style={{ width: '38px', height: '38px', fontSize: '14px', flexShrink: 0 }}
+            {/* Nút đăng xuất */}
+            <div className="border-start ps-3">
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="btn btn-outline-danger fw-semibold d-flex align-items-center gap-2"
+                title="Đăng xuất khỏi hệ thống"
               >
-                AD
-              </div>
-              <div className="d-none d-md-block text-start" style={{ lineHeight: '1.2' }}>
-                <span className="fw-bold small text-dark d-block">Nguyễn Quản Trị</span>
-                <span className="text-muted" style={{ fontSize: '11px' }}>Database Administrator</span>
-              </div>
+                <i className="bi bi-box-arrow-right"></i>
+                <span>Đăng xuất</span>
+              </button>
             </div>
           </div>
         </header>
@@ -1113,70 +1414,37 @@ export default function AdminDashboard() {
           <div className="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
             <div>
               <h4 className="fw-bold text-dark mb-1">
-                {activeTab === 'products' && 'Quản Lý Bản Ghi Products'}
-                {activeTab === 'categories' && 'Quản Lý Bảng Categories'}
-                {activeTab === 'brands' && 'Quản Lý Brands'}
+                {activeTab === 'products' && 'Quản Lý Sản phẩm'}
+                {activeTab === 'categories' && 'Quản Lý Danh mục'}
+                {activeTab === 'brands' && 'Quản Lý Thương hiệu'}
+                {activeTab === 'users' && 'Quản Lý Tài Khoản'}
+                {activeTab === 'orders' && 'Quản lý đơn hàng'}
               </h4>
-              <p className="text-secondary small mb-0">
-                Toàn bộ thao tác Thêm, Sửa, Xóa tuân thủ ràng buộc Khóa Chính, Khóa Ngoại và Ràng Buộc UNIQUE của MySQL.
-              </p>
+
             </div>
 
             <div className="d-flex align-items-center gap-2">
               {activeTab === 'products' && (
                 <>
-                  <button
-                    onClick={handleExportCSV}
-                    className="btn btn-white btn-sm bg-white border text-secondary shadow-sm rounded-2 px-3 fw-semibold"
-                    title="Xuất bảng products ra CSV"
-                  >
-                    <i className="bi bi-file-earmark-spreadsheet me-1 text-success"></i>Xuất CSV
-                  </button>
-                  <button
-                    onClick={handleOpenAddProduct}
-                    className="btn btn-primary btn-sm rounded-2 px-3 fw-semibold shadow-sm d-flex align-items-center gap-1"
-                  >
-                    <i className="bi bi-plus-lg"></i>
-                    <span>+ Thêm Sản Phẩm</span>
-                  </button>
+
                 </>
               )}
 
               {activeTab === 'categories' && (
                 <>
-                  <button
-                    onClick={handleExportCategoryCSV}
-                    className="btn btn-white btn-sm bg-white border text-secondary shadow-sm rounded-2 px-3 fw-semibold"
-                    title="Xuất bảng categories ra CSV"
-                  >
-                    <i className="bi bi-file-earmark-spreadsheet me-1 text-success"></i>Xuất CSV
-                  </button>
-                  <button
-                    onClick={handleOpenAddCategory}
-                    className="btn btn-success btn-sm rounded-2 px-3 fw-semibold shadow-sm d-flex align-items-center gap-1"
-                  >
-                    <i className="bi bi-plus-lg"></i>
-                    <span>+ Thêm Danh Mục</span>
-                  </button>
+
                 </>
               )}
 
               {activeTab === 'brands' && (
                 <>
-                  <button
-                    onClick={handleExportBrandCSV}
-                    className="btn btn-white btn-sm bg-white border text-secondary shadow-sm rounded-2 px-3 fw-semibold"
-                    title="Xuất bảng brands ra CSV"
-                  >
-                    <i className="bi bi-file-earmark-spreadsheet me-1 text-success"></i>Xuất CSV
-                  </button>
-                  <button
-                    onClick={handleOpenAddBrand}
-                    className="btn btn-info text-white btn-sm rounded-2 px-3 fw-semibold shadow-sm d-flex align-items-center gap-1"
-                  >
-                    <i className="bi bi-plus-lg"></i>
-                    <span>+ Thêm Thương Hiệu</span>
-                  </button>
+
+                </>
+              )}
+
+              {activeTab === 'users' && (
+                <>
+
                 </>
               )}
 
@@ -1185,9 +1453,10 @@ export default function AdminDashboard() {
           </div>
 
           {/* ================= 3. STATS STRIP ================= */}
-          <div className="row g-3 mb-4">
-            {/* Thẻ 1: Products (Chiếm 4/12 cột) */}
-            <div className="col-12 col-md-4">
+                    {isAdmin && (
+<div className="row g-3 mb-4">
+            {/* Thẻ 1: Products */}
+            <div className="col-12 col-sm-6 col-xl-3">
               <div
                 className={`card border-0 shadow-sm rounded-3 p-3 bg-white h-100 cursor-pointer ${
                   activeTab === 'products' ? 'border-primary border-2 border' : ''
@@ -1196,7 +1465,7 @@ export default function AdminDashboard() {
                 onClick={() => setActiveTab('products')}
               >
                 <div className="d-flex justify-content-between align-items-center mb-2">
-                  <span className="text-muted small fw-semibold text-uppercase">Bảng Products</span>
+                  <span className="text-muted small fw-semibold text-uppercase">Sản phẩm</span>
                   <div className="rounded-3 d-flex align-items-center justify-content-center text-primary" style={{ width: '40px', height: '40px', backgroundColor: '#eef2ff' }}>
                     <i className="bi bi-box-seam fs-5"></i>
                   </div>
@@ -1208,8 +1477,8 @@ export default function AdminDashboard() {
               </div>
             </div>
 
-            {/* Thẻ 2: Categories (Chiếm 4/12 cột) */}
-            <div className="col-12 col-md-4">
+            {/* Thẻ 2: Categories */}
+            <div className="col-12 col-sm-6 col-xl-3">
               <div
                 className={`card border-0 shadow-sm rounded-3 p-3 bg-white h-100 cursor-pointer ${
                   activeTab === 'categories' ? 'border-success border-2 border' : ''
@@ -1218,7 +1487,7 @@ export default function AdminDashboard() {
                 onClick={() => setActiveTab('categories')}
               >
                 <div className="d-flex justify-content-between align-items-center mb-2">
-                  <span className="text-muted small fw-semibold text-uppercase">Bảng Categories</span>
+                  <span className="text-muted small fw-semibold text-uppercase">Danh mục</span>
                   <div className="rounded-3 d-flex align-items-center justify-content-center text-success" style={{ width: '40px', height: '40px', backgroundColor: '#ecfdf5' }}>
                     <i className="bi bi-grid-fill fs-5"></i>
                   </div>
@@ -1230,8 +1499,8 @@ export default function AdminDashboard() {
               </div>
             </div>
 
-            {/* Thẻ 3: Brands (Chiếm 4/12 cột) */}
-            <div className="col-12 col-md-4">
+            {/* Thẻ 3: Brands */}
+            <div className="col-12 col-sm-6 col-xl-3">
               <div
                 className={`card border-0 shadow-sm rounded-3 p-3 bg-white h-100 cursor-pointer ${
                   activeTab === 'brands' ? 'border-info border-2 border' : ''
@@ -1240,7 +1509,7 @@ export default function AdminDashboard() {
                 onClick={() => setActiveTab('brands')}
               >
                 <div className="d-flex justify-content-between align-items-center mb-2">
-                  <span className="text-muted small fw-semibold text-uppercase">Bảng Brands</span>
+                  <span className="text-muted small fw-semibold text-uppercase">Thương hiệu</span>
                   <div className="rounded-3 d-flex align-items-center justify-content-center text-info" style={{ width: '40px', height: '40px', backgroundColor: '#e0f2fe' }}>
                     <i className="bi bi-award-fill fs-5"></i>
                   </div>
@@ -1251,16 +1520,41 @@ export default function AdminDashboard() {
                 </span>
               </div>
             </div>
+
+            {/* Thẻ 4: Users */}
+            <div className="col-12 col-sm-6 col-xl-3">
+              <div
+                className={`card border-0 shadow-sm rounded-3 p-3 bg-white h-100 cursor-pointer ${
+                  activeTab === 'users' ? 'border-warning border-2 border' : ''
+                }`}
+                style={{ cursor: 'pointer' }}
+                onClick={() => setActiveTab('users')}
+              >
+                <div className="d-flex justify-content-between align-items-center mb-2">
+                  <span className="text-muted small fw-semibold text-uppercase">Tài khoản</span>
+                  <div className="rounded-3 d-flex align-items-center justify-content-center text-warning" style={{ width: '40px', height: '40px', backgroundColor: '#fef3c7' }}>
+                    <i className="bi bi-people-fill fs-5"></i>
+                  </div>
+                </div>
+                <h4 className="fw-bold text-dark mb-1">{users.length} Tài khoản</h4>
+                <span className="text-warning-emphasis small fw-semibold">
+                  <i className="bi bi-person-badge me-1"></i>{users.filter((u) => u.role === 'STAFF').length} nhân viên
+                </span>
+              </div>
+            </div>
           </div>
 
+          )}
+
           {/* ================= 4. TAB NAVIGATION ================= */}
-          <ul className="nav nav-pills mb-3 bg-white p-2 rounded-3 shadow-sm border">
+                    {isAdmin && (
+<ul className="nav nav-pills mb-3 bg-white p-2 rounded-3 shadow-sm border">
             <li className="nav-item">
               <button
                 onClick={() => setActiveTab('products')}
                 className={`nav-link fw-semibold px-4 py-2 ${activeTab === 'products' ? 'active' : 'text-secondary'}`}
               >
-                <i className="bi bi-box-seam me-2"></i>Products ({products.length})
+                <i className="bi bi-box-seam me-2"></i>Sản phẩm ({products.length})
               </button>
             </li>
             <li className="nav-item">
@@ -1268,7 +1562,7 @@ export default function AdminDashboard() {
                 onClick={() => setActiveTab('categories')}
                 className={`nav-link fw-semibold px-4 py-2 ${activeTab === 'categories' ? 'active bg-success text-white' : 'text-secondary'}`}
               >
-                <i className="bi bi-grid-fill me-2"></i>Categories ({categories.length})
+                <i className="bi bi-grid-fill me-2"></i>Danh mục ({categories.length})
               </button>
             </li>
             <li className="nav-item">
@@ -1276,10 +1570,19 @@ export default function AdminDashboard() {
                 onClick={() => setActiveTab('brands')}
                 className={`nav-link fw-semibold px-4 py-2 ${activeTab === 'brands' ? 'active bg-info text-white' : 'text-secondary'}`}
               >
-                <i className="bi bi-award-fill me-2"></i>Brands ({brands.length})
+                <i className="bi bi-award-fill me-2"></i>Thương hiệu ({brands.length})
+              </button>
+            </li>
+            <li className="nav-item">
+              <button
+                onClick={() => setActiveTab('users')}
+                className={`nav-link fw-semibold px-4 py-2 ${activeTab === 'users' ? 'active bg-warning text-dark' : 'text-secondary'}`}
+              >
+                <i className="bi bi-people-fill me-2"></i>Tài khoản & Phân quyền ({users.length})
               </button>
             </li>
           </ul>
+          )}
 
           {/* ================= 5. BẢNG PRODUCTS (TAB CHÍNH THEO CSDL) ================= */}
           {activeTab === 'products' && (
@@ -1332,7 +1635,7 @@ export default function AdminDashboard() {
                       value={categoryFilter}
                       onChange={(e) => setCategoryFilter(e.target.value)}
                     >
-                      <option value="ALL">Tất cả danh mục (category_id)</option>
+                      <option value="ALL">Tất cả danh mục</option>
                       {categories.map((c) => (
                         <option key={c.id} value={String(c.id)}>
                           #{c.id} - {c.name}
@@ -1347,7 +1650,7 @@ export default function AdminDashboard() {
                       value={brandFilter}
                       onChange={(e) => setBrandFilter(e.target.value)}
                     >
-                      <option value="ALL">Tất cả hãng (brand_id)</option>
+                      <option value="ALL">Tất cả hãng</option>
                       {brands.map((b) => (
                         <option key={b.id} value={String(b.id)}>
                           #{b.id} - {b.name}
@@ -1362,7 +1665,7 @@ export default function AdminDashboard() {
                       value={statusFilter}
                       onChange={(e) => setStatusFilter(e.target.value)}
                     >
-                      <option value="ALL">Tất cả status</option>
+                      <option value="ALL">Tất cả trạng thái</option>
                       <option value="ACTIVE">Đang bán</option>
                       <option value="INACTIVE">Tạm ngưng</option>
                     </select>
@@ -1394,7 +1697,7 @@ export default function AdminDashboard() {
                       <th>Tên Sản Phẩm</th>
                       <th>Danh Mục</th>
                       <th>Thương Hiệu</th>
-                      <th className="text-end">Đơn Giá (`price`)</th>
+                      <th className="text-end">Đơn Giá </th>
                       <th className="text-center">Trạng Thái</th>
                       <th className="text-end pe-4" style={{ width: '120px' }}>Thao Tác</th>
                     </tr>
@@ -1451,11 +1754,11 @@ export default function AdminDashboard() {
                           <td className="text-center">
                             {p.status === 'ACTIVE' ? (
                               <span className="badge bg-success-subtle text-success border border-success-subtle">
-                                ● ACTIVE
+                                ● Đang hoạt động
                               </span>
                             ) : (
                               <span className="badge bg-secondary-subtle text-secondary border border-secondary-subtle">
-                                ○ INACTIVE
+                                ○ Ngừng hoạt động
                               </span>
                             )}
                           </td>
@@ -1468,18 +1771,13 @@ export default function AdminDashboard() {
                               >
                                 <i className="bi bi-pencil-square"></i>
                               </button>
-                                <button
-                                    onClick={() => handleDeleteProduct(p.id, p.sku, p.name)}
-                                    className="btn btn-light text-warning border"
-                                    title={
-                                        p.status === 'INACTIVE'
-                                            ? 'Sản phẩm đã ngừng kinh doanh'
-                                            : 'Ngừng kinh doanh'
-                                    }
-                                    disabled={p.status === 'INACTIVE'}
-                                >
-                                    <i className="bi bi-pause-circle"></i>
-                                </button>
+                              <button
+                                onClick={() => handleDeleteProduct(p.id, p.sku, p.name)}
+                                className="btn btn-light text-danger border"
+                                title="Xóa"
+                              >
+                                <i className="bi bi-trash"></i>
+                              </button>
                             </div>
                           </td>
                         </tr>
@@ -1492,10 +1790,7 @@ export default function AdminDashboard() {
               {/* Table Footer */}
               <div className="card-footer bg-white py-3 border-top d-flex flex-wrap justify-content-between align-items-center">
                 <small className="text-muted">
-                  Hiển thị <strong>{filteredProducts.length}</strong> / <strong>{products.length}</strong> sản phẩm trong bảng <code>products</code>
-                </small>
-                <small className="text-muted font-monospace">
-                  Ràng buộc kiểm tra: <code>chk_products_price (price &gt;= 0)</code>
+                  Hiển thị <strong>{filteredProducts.length}</strong> / <strong>{products.length}</strong> sản phẩm 
                 </small>
               </div>
             </div>
@@ -1557,8 +1852,8 @@ export default function AdminDashboard() {
                       onChange={(e) => setCategoryStatusFilter(e.target.value)}
                     >
                       <option value="ALL">Tất cả trạng thái</option>
-                      <option value="ACTIVE">ACTIVE</option>
-                      <option value="INACTIVE">INACTIVE</option>
+                      <option value="ACTIVE">Đang hoạt động</option>
+                      <option value="INACTIVE">Ngừng hoạt động</option>
                     </select>
                   </div>
                 </div>
@@ -1608,11 +1903,11 @@ export default function AdminDashboard() {
                             <td>
                               {c.status === 'ACTIVE' ? (
                                 <span className="badge bg-success-subtle text-success border border-success-subtle">
-                                  ● ACTIVE
+                                  ● Đang hoạt động
                                 </span>
                               ) : (
                                 <span className="badge bg-secondary-subtle text-secondary border border-secondary-subtle">
-                                  ○ INACTIVE
+                                  ○ Ngừng hoạt động
                                 </span>
                               )}
                             </td>
@@ -1625,24 +1920,12 @@ export default function AdminDashboard() {
                                 >
                                   <i className="bi bi-pencil-square"></i>
                                 </button>
-                                {/*<button*/}
-                                {/*  onClick={() => handleDeleteCategory(c.id, c.name)}*/}
-                                {/*  className="btn btn-light text-danger border"*/}
-                                {/*  title="Xóa danh mục"*/}
-                                {/*>*/}
-                                {/*  <i className="bi bi-trash"></i>*/}
-                                {/*</button>*/}
                                 <button
-                                    onClick={() => handleDeleteCategory(c.id, c.name)}
-                                    className="btn btn-light text-warning border"
-                                    title={
-                                      c.status === 'INACTIVE'
-                                          ? 'Danh mục đã ngừng hoạt động'
-                                          : 'Ngừng hoạt động danh mục'
-                                    }
-                                    disabled={c.status === 'INACTIVE'}
+                                  onClick={() => handleDeleteCategory(c.id, c.name)}
+                                  className="btn btn-light text-danger border"
+                                  title="Xóa danh mục"
                                 >
-                                  <i className="bi bi-pause-circle"></i>
+                                  <i className="bi bi-trash"></i>
                                 </button>
                               </div>
                             </td>
@@ -1720,8 +2003,8 @@ export default function AdminDashboard() {
                       onChange={(e) => setBrandStatusFilter(e.target.value)}
                     >
                       <option value="ALL">Tất cả trạng thái</option>
-                      <option value="ACTIVE">ACTIVE</option>
-                      <option value="INACTIVE">INACTIVE</option>
+                      <option value="ACTIVE">Đang hoạt động</option>
+                      <option value="INACTIVE">Ngừng hoạt động</option>
                     </select>
                   </div>
                 </div>
@@ -1783,11 +2066,11 @@ export default function AdminDashboard() {
                             <td>
                               {b.status === 'ACTIVE' ? (
                                 <span className="badge bg-success-subtle text-success border border-success-subtle">
-                                  ● ACTIVE
+                                  ● Đang hoạt động
                                 </span>
                               ) : (
                                 <span className="badge bg-secondary-subtle text-secondary border border-secondary-subtle">
-                                  ○ INACTIVE
+                                  ○ Ngừng hoạt động
                                 </span>
                               )}
                             </td>
@@ -1800,24 +2083,12 @@ export default function AdminDashboard() {
                                 >
                                   <i className="bi bi-pencil-square"></i>
                                 </button>
-                                {/*<button*/}
-                                {/*  onClick={() => handleDeleteBrand(b.id, b.name)}*/}
-                                {/*  className="btn btn-light text-danger border"*/}
-                                {/*  title="Xóa thương hiệu"*/}
-                                {/*>*/}
-                                {/*  <i className="bi bi-trash"></i>*/}
-                                {/*</button>*/}
                                 <button
-                                    onClick={() => handleDeleteBrand(b.id, b.name)}
-                                    className="btn btn-light text-warning border"
-                                    title={
-                                      b.status === 'INACTIVE'
-                                          ? 'Thương hiệu đã ngừng hoạt động'
-                                          : 'Ngừng hoạt động thương hiệu'
-                                    }
-                                    disabled={b.status === 'INACTIVE'}
+                                  onClick={() => handleDeleteBrand(b.id, b.name)}
+                                  className="btn btn-light text-danger border"
+                                  title="Xóa thương hiệu"
                                 >
-                                  <i className="bi bi-pause-circle"></i>
+                                  <i className="bi bi-trash"></i>
                                 </button>
                               </div>
                             </td>
@@ -1838,9 +2109,326 @@ export default function AdminDashboard() {
               </div>
             </div>
           )}
+
+          {/* Bảng người dùng tạm dùng dữ liệu demo cho đến khi có API Identity Admin. */}
+          {activeTab === 'users' && (
+            <div className="card border-0 shadow-sm rounded-3 bg-white mb-4">
+              <div className="card-header bg-white py-3 border-bottom">
+                <div className="d-flex flex-wrap justify-content-between align-items-center gap-3">
+                  <div>
+                    <h5 className="fw-bold text-dark mb-0">
+                      <i className="bi bi-people-fill me-2 text-warning"></i>
+                      Tài Khoản Người Dùng & Phân Quyền
+                    </h5>
+                    <small className="text-warning-emphasis">
+                      Dữ liệu demo — chưa đồng bộ với Identity Service.
+                    </small>
+                  </div>
+                  <div className="d-flex align-items-center gap-2">
+                    <button
+                      onClick={handleOpenAddUser}
+                      className="btn btn-warning text-dark btn-sm rounded-pill px-3 fw-bold shadow-sm"
+                    >
+                      <i className="bi bi-person-plus-fill me-1"></i>Thêm Tài Khoản
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Users Filter Strip */}
+              <div className="card-body border-bottom bg-light bg-opacity-50 py-3">
+                <div className="row g-2 align-items-center">
+                  <div className="col-12 col-md-4">
+                    <div className="input-group input-group-sm">
+                      <span className="input-group-text bg-white border-end-0">
+                        <i className="bi bi-search text-muted"></i>
+                      </span>
+                      <input
+                        type="text"
+                        className="form-control bg-white border-start-0"
+                        placeholder="Tìm email, họ tên, số điện thoại, ID..."
+                        value={userSearchKeyword}
+                        onChange={(e) => setUserSearchKeyword(e.target.value)}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="col-6 col-md-3">
+                    <select
+                      className="form-select form-select-sm"
+                      value={userRoleFilter}
+                      onChange={(e) => setUserRoleFilter(e.target.value)}
+                    >
+                      <option value="ALL">Tất cả vai trò</option>
+                      <option value="ADMIN">Quản trị viên</option>
+                      <option value="STAFF">Nhân viên</option>
+                      <option value="CUSTOMER">Khách hàng</option>
+                    </select>
+                  </div>
+
+                  <div className="col-6 col-md-3">
+                    <select
+                      className="form-select form-select-sm"
+                      value={userStatusFilter}
+                      onChange={(e) => setUserStatusFilter(e.target.value)}
+                    >
+                      <option value="ALL">Tất cả trạng thái</option>
+                      <option value="ACTIVE">Đang hoạt động</option>
+                      <option value="INACTIVE">Đã khóa</option>
+                    </select>
+                  </div>
+
+                  <div className="col-12 col-md-2 text-md-end">
+                    <span className="text-muted small">
+                      Tìm thấy: <strong>{filteredUsers.length}</strong> tài khoản
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Users Table */}
+              <div className="table-responsive">
+                <table className="table table-hover align-middle mb-0">
+                  <thead className="table-light">
+                    <tr>
+                      <th className="ps-4" style={{ width: '60px' }}>ID</th>
+                      <th>Họ và Tên</th>
+                      <th>Email / Đăng nhập</th>
+                      <th>Số Điện Thoại</th>
+                      <th>Vai Trò (Role)</th>
+                      <th>Trạng Thái</th>
+                      <th>Ngày Tạo</th>
+                      <th className="text-end pe-4" style={{ width: '130px' }}>Thao tác</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredUsers.length === 0 ? (
+                      <tr>
+                        <td colSpan="8" className="text-center py-5 text-muted">
+                          <i className="bi bi-person-x fs-1 d-block mb-2 text-secondary"></i>
+                          Không tìm thấy tài khoản nào phù hợp với bộ lọc.
+                        </td>
+                      </tr>
+                    ) : (
+                      filteredUsers.map((u) => {
+                        return (
+                          <tr key={u.id}>
+                            <td className="ps-4 fw-bold text-secondary">#{u.id}</td>
+                            <td>
+                              <div className="d-flex align-items-center gap-2">
+                                <div
+                                  className={`rounded-circle d-flex align-items-center justify-content-center text-white fw-bold ${
+                                    u.role === 'ADMIN'
+                                      ? 'bg-danger'
+                                      : u.role === 'STAFF'
+                                      ? 'bg-warning text-dark'
+                                      : 'bg-secondary'
+                                  }`}
+                                  style={{ width: '32px', height: '32px', fontSize: '12px' }}
+                                >
+                                  {u.full_name ? u.full_name.charAt(0).toUpperCase() : 'U'}
+                                </div>
+                                <span className="fw-semibold text-dark">{u.full_name}</span>
+                              </div>
+                            </td>
+                            <td className="font-monospace text-primary">{u.email}</td>
+                            <td>{u.phone || <span className="text-muted fst-italic">Chưa có</span>}</td>
+                            <td>
+                              {u.role === 'ADMIN' && (
+                                <span className="badge bg-danger-subtle text-danger border border-danger-subtle">
+                                  <i className="bi bi-shield-fill me-1"></i>ADMIN
+                                </span>
+                              )}
+                              {u.role === 'STAFF' && (
+                                <span className="badge bg-warning-subtle text-dark border border-warning-subtle fw-bold">
+                                  <i className="bi bi-person-badge-fill me-1"></i>STAFF
+                                </span>
+                              )}
+                              {u.role === 'CUSTOMER' && (
+                                <span className="badge bg-secondary-subtle text-secondary border border-secondary-subtle">
+                                  <i className="bi bi-person me-1"></i>CUSTOMER
+                                </span>
+                              )}
+                            </td>
+                            <td>
+                              {u.status === 'ACTIVE' ? (
+                                <span className="badge bg-success-subtle text-success border border-success-subtle">
+                                  ● Đang hoạt động
+                                </span>
+                              ) : (
+                                <span className="badge bg-secondary-subtle text-secondary border border-secondary-subtle">
+                                  ○ Ngừng hoạt động
+                                </span>
+                              )}
+                            </td>
+                            <td className="small text-muted">{u.created_at}</td>
+                            <td className="text-end pe-4">
+                              <div className="btn-group btn-group-sm">
+                                <button
+                                  onClick={() => handleToggleUserStatus(u.id)}
+                                  className={`btn btn-light border ${u.status === 'ACTIVE' ? 'text-warning' : 'text-success'}`}
+                                  title={u.status === 'ACTIVE' ? 'Khóa tài khoản' : 'Mở khóa tài khoản'}
+                                >
+                                  <i className={`bi ${u.status === 'ACTIVE' ? 'bi-lock-fill' : 'bi-unlock-fill'}`}></i>
+                                </button>
+                                <button
+                                  onClick={() => handleOpenEditUser(u)}
+                                  className="btn btn-light text-primary border"
+                                  title="Chỉnh sửa tài khoản"
+                                >
+                                  <i className="bi bi-pencil-square"></i>
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteUser(u.id, u.email)}
+                                  className="btn btn-light text-danger border"
+                                  title="Xóa tài khoản"
+                                  disabled={u.id === 1}
+                                >
+                                  <i className="bi bi-trash"></i>
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="card-footer bg-white py-3 border-top d-flex justify-content-between align-items-center">
+                <small className="text-muted">
+                  Hiển thị <strong>{filteredUsers.length}</strong> / <strong>{users.length}</strong> tài khoản
+                </small>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'orders' && (
+            <section className="card border-0 shadow-sm rounded-3 bg-white mb-4 overflow-hidden">
+              <div className="card-header bg-white py-3 px-3 px-lg-4 border-bottom">
+                <div className="d-flex flex-wrap justify-content-between align-items-center gap-3">
+                  <div>
+                    <h5 className="fw-bold text-dark mb-1"><i className="bi bi-receipt me-2 text-primary"></i>Quản lý đơn hàng</h5>
+                    <span className="small text-muted">Theo dõi và xử lý các đơn hàng của cửa hàng</span>
+                  </div>
+                  <span className="badge bg-primary-subtle text-primary px-3 py-2">{orders.length} đơn hàng</span>
+                </div>
+              </div>
+
+              <div className="d-flex overflow-auto bg-white border-bottom px-2 px-lg-3" role="tablist" aria-label="Lọc đơn hàng theo trạng thái">
+                {[
+                  { value: 'ALL', label: 'Tất cả' },
+                  ...Object.entries(ORDER_STATUS_LABELS).map(([value, label]) => ({ value, label })),
+                ].map((tab) => {
+                  const count = tab.value === 'ALL' ? orders.length : orders.filter((order) => order.status === tab.value).length;
+                  const selected = orderStatusFilter === tab.value;
+                  return (
+                    <button
+                      key={tab.value}
+                      type="button"
+                      role="tab"
+                      aria-selected={selected}
+                      onClick={() => setOrderStatusFilter(tab.value)}
+                      className={`btn rounded-0 border-0 border-bottom border-3 px-3 py-3 text-nowrap ${selected ? 'border-primary text-primary fw-bold' : 'border-transparent text-secondary'}`}
+                    >
+                      <span className="d-block">{tab.label}</span>
+                      <small className={selected ? 'text-primary' : 'text-muted'}>{count} đơn</small>
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="p-3 p-lg-4 bg-white border-bottom">
+                <div className="row g-2 align-items-center">
+                  <div className="col-12 col-lg-6">
+                    <div className="input-group">
+                      <span className="input-group-text bg-white"><i className="bi bi-search text-muted"></i></span>
+                      <input type="search" className="form-control" placeholder="Tìm mã đơn hàng, tên hoặc số điện thoại khách..." value={orderSearchKeyword} onChange={(event) => setOrderSearchKeyword(event.target.value)} />
+                    </div>
+                  </div>
+                  <div className="col-8 col-lg-3">
+                    <select className="form-select" value={orderPaymentFilter} onChange={(event) => setOrderPaymentFilter(event.target.value)} aria-label="Lọc theo phương thức thanh toán">
+                      <option value="ALL">Tất cả thanh toán</option>
+                      {[...new Set(orders.map((order) => order.payment_method))].map((payment) => <option key={payment} value={payment}>{PAYMENT_METHOD_LABELS[payment] || payment}</option>)}
+                    </select>
+                  </div>
+                  
+                </div>
+                <div className="small text-muted mt-3"><i className="bi bi-info-circle me-1"></i>Đang hiển thị {filteredOrders.length} đơn hàng phù hợp</div>
+              </div>
+
+              <div className="table-responsive">
+                <table className="table table-hover align-middle mb-0">
+                  <thead className="table-light">
+                    <tr>
+                      <th className="ps-3">Mã đơn hàng</th>
+                      <th>Ngày đặt</th>
+                      <th>Khách hàng</th>
+                      <th>Sản phẩm</th>
+                      <th className="text-center">Số lượng</th>
+                      <th>Thanh toán</th>
+                      <th className="text-end">Tổng tiền</th>
+                      <th>Trạng thái</th>
+                      <th className="text-center">Thao tác</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredOrders.length === 0 ? (
+                      <tr><td colSpan="9" className="text-center py-5 text-muted"><i className="bi bi-inbox fs-2 d-block mb-2"></i>Không tìm thấy đơn hàng phù hợp.</td></tr>
+                    ) : filteredOrders.map((order) => {
+                      const items = orderItems.filter((item) => item.order_id === order.id);
+                      const quantity = items.reduce((sum, item) => sum + item.quantity, 0);
+                      return (
+                        <tr key={order.id}>
+                          <td className="ps-3"><button type="button" className="btn btn-link p-0 fw-semibold text-primary text-decoration-none" onClick={() => setSelectedOrder(order)}>{order.order_code}</button></td>
+                          <td className="text-nowrap">{formatOrderDate(order.created_at)}</td>
+                          <td><div className="fw-semibold">{order.customer_name}</div><small className="text-muted">{order.customer_phone}</small></td>
+                          <td style={{ minWidth: '210px' }}>{items.map((item) => item.product_name).join(', ') || '—'}</td>
+                          <td className="text-center">{quantity}</td>
+                          <td><div>{PAYMENT_METHOD_LABELS[order.payment_method] || order.payment_method}</div><small className={order.payment_status === 'PAID' ? 'text-success' : 'text-secondary'}>{PAYMENT_STATUS_LABELS[order.payment_status] || order.payment_status}</small></td>
+                          <td className="text-end fw-bold text-nowrap">{order.final_amount.toLocaleString('vi-VN')} ₫</td>
+                          <td style={{ minWidth: '165px' }}><select className={`form-select form-select-sm ${orderStatusClass[order.status]}`} value={order.status} onChange={(event) => handleOrderStatusChange(order.id, event.target.value)} aria-label={`Cập nhật trạng thái đơn ${order.order_code}`}>{Object.entries(ORDER_STATUS_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></td>
+                          <td className="text-center text-nowrap"><button type="button" className="btn btn-sm btn-outline-primary" onClick={() => setSelectedOrder(order)} title="Xem chi tiết đơn hàng"><i className="bi bi-eye me-1"></i>Chi tiết</button></td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+              <div className="card-footer bg-white py-3 px-3 px-lg-4 small text-muted d-flex justify-content-between">
+                <span>Đang xem {filteredOrders.length} / {orders.length} đơn hàng</span>
+                <span>Trang 1 / 1</span>
+              </div>
+            </section>
+          )}
         </main>
       </div>
 
+      {selectedOrder && (() => {
+        const items = orderItems.filter((item) => item.order_id === selectedOrder.id);
+        const events = orderHistory.filter((item) => item.order_id === selectedOrder.id);
+        const voucher = vouchers.find((item) => item.code === selectedOrder.voucher_code);
+        return (
+          <div className="modal fade show d-block" role="dialog" aria-modal="true" aria-labelledby="order-detail-title" style={{ backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1080 }} onClick={() => setSelectedOrder(null)}>
+            <div className="modal-dialog modal-dialog-centered modal-xl modal-dialog-scrollable" onClick={(event) => event.stopPropagation()}>
+              <div className="modal-content border-0 shadow rounded-4">
+                <div className="modal-header"><div><h5 className="modal-title fw-bold" id="order-detail-title">Chi tiết đơn hàng</h5><span className="text-primary fw-semibold">{selectedOrder.order_code}</span></div><button type="button" className="btn-close" aria-label="Đóng" onClick={() => setSelectedOrder(null)}></button></div>
+                <div className="modal-body">
+                  <div className="row g-3 mb-4">
+                    <div className="col-md-6"><div className="p-3 bg-light rounded-3 h-100"><div className="small text-muted">Khách hàng · user_id {selectedOrder.user_id}</div><strong>{selectedOrder.customer_name}</strong><div>{selectedOrder.customer_phone}</div><div>{selectedOrder.customer_email || '—'}</div></div></div>
+                    <div className="col-md-6"><div className="p-3 bg-light rounded-3 h-100"><div className="small text-muted">Trạng thái đơn</div><span className={`badge ${orderStatusClass[selectedOrder.status]}`}>{ORDER_STATUS_LABELS[selectedOrder.status]}</span><div className="small text-muted mt-2">Tạo {formatOrderDate(selectedOrder.created_at)} · Cập nhật {formatOrderDate(selectedOrder.updated_at)}</div></div></div>
+                    <div className="col-12"><div className="p-3 bg-light rounded-3"><div className="small text-muted">Địa chỉ giao hàng</div><strong>{selectedOrder.shipping_address}</strong><div className="small text-muted mt-2">Chi nhánh: {selectedOrder.branch_name || '—'}{selectedOrder.branch_id ? ` (ID: ${selectedOrder.branch_id})` : ''}</div></div></div>
+                  </div>
+                  <h6 className="fw-bold">Chi tiết sản phẩm</h6><div className="table-responsive border rounded-3 mb-4"><table className="table align-middle mb-0"><thead className="table-light"><tr><th>Sản phẩm</th><th>SKU</th><th>Phân loại / IMEI</th><th>Đơn giá</th><th>Số lượng</th><th>Thành tiền</th></tr></thead><tbody>{items.map((item) => <tr key={item.id}><td><div className="d-flex align-items-center gap-2">{item.product_image && <img src={item.product_image} alt={item.product_name} width="48" height="48" className="object-fit-contain" />}<strong>{item.product_name}</strong></div></td><td>{item.sku}</td><td>{item.variant_name || '—'}<small className="d-block text-muted">IMEI: {item.imei || '—'}</small></td><td>{item.unit_price.toLocaleString('vi-VN')}₫</td><td>{item.quantity}</td><td>{item.total_price.toLocaleString('vi-VN')}₫</td></tr>)}</tbody></table></div>
+                  <div className="row g-4"><div className="col-md-6"><h6 className="fw-bold">Thanh toán & ghi chú</h6><div className="d-flex justify-content-between border-bottom py-2"><span>Phương thức</span><strong>{PAYMENT_METHOD_LABELS[selectedOrder.payment_method] || selectedOrder.payment_method}</strong></div><div className="d-flex justify-content-between border-bottom py-2"><span>Trạng thái thanh toán</span><strong>{PAYMENT_STATUS_LABELS[selectedOrder.payment_status] || selectedOrder.payment_status}</strong></div><div className="d-flex justify-content-between border-bottom py-2"><span>Voucher</span><strong>{voucher ? `${voucher.code} · ${voucher.title}` : 'Không áp dụng'}</strong></div><div className="small mt-2">Ghi chú: {selectedOrder.note || '—'}</div></div><div className="col-md-6"><h6 className="fw-bold">Tổng kết đơn hàng</h6><div className="d-flex justify-content-between py-1"><span>Tổng tiền hàng</span><span>{selectedOrder.total_amount.toLocaleString('vi-VN')}₫</span></div><div className="d-flex justify-content-between py-1 text-success"><span>Giảm giá</span><span>− {selectedOrder.discount_amount.toLocaleString('vi-VN')}₫</span></div><div className="d-flex justify-content-between border-top mt-2 pt-2 fw-bold"><span>Thành tiền</span><span className="text-danger">{selectedOrder.final_amount.toLocaleString('vi-VN')}₫</span></div></div></div>
+                  <h6 className="fw-bold mt-4">Lịch sử trạng thái</h6>{events.map((event) => <div className="border-start border-3 ps-3 py-1 mb-2" key={event.id}><strong>{ORDER_STATUS_LABELS[event.current_status] || event.current_status}</strong><small className="text-muted ms-2">{formatOrderDate(event.created_at)} · {event.changed_by}</small><div className="small text-secondary">{event.action_event}{event.reason ? ` — ${event.reason}` : ''}</div></div>)}
+                </div><div className="modal-footer"><button type="button" className="btn btn-secondary rounded-pill" onClick={() => setSelectedOrder(null)}>Đóng</button></div>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
       {/* ================= 8. MODAL THÊM / SỬA PRODUCTS ================= */}
       {showProductModal && (
         <div
@@ -1867,9 +2455,7 @@ export default function AdminDashboard() {
                   {/* Mã SKU & Tên sản phẩm */}
                   <div className="row g-3 mb-3">
                     <div className="col-md-4">
-                      <label className="form-label fw-semibold small">
                       <label className="form-label fw-semibold small">Mã SKU <span className="text-danger">*</span></label>
-                      </label>
                       <input
                         type="text"
                         className="form-control font-monospace"
@@ -1882,9 +2468,7 @@ export default function AdminDashboard() {
                     </div>
 
                     <div className="col-md-8">
-                      <label className="form-label fw-semibold small">
                       <label className="form-label fw-semibold small">Tên sản phẩm <span className="text-danger">*</span></label>
-                      </label>
                       <input
                         type="text"
                         className="form-control"
@@ -1900,9 +2484,7 @@ export default function AdminDashboard() {
                   {/* Category FK & Brand FK */}
                   <div className="row g-3 mb-3">
                     <div className="col-md-6">
-                      <label className="form-label fw-semibold small">
                       <label className="form-label fw-semibold small">Danh mục <span className="text-danger">*</span></label>
-                      </label>
                       <select
                         className="form-select"
                         required
@@ -1918,9 +2500,7 @@ export default function AdminDashboard() {
                     </div>
 
                     <div className="col-md-6">
-                      <label className="form-label fw-semibold small">
                       <label className="form-label fw-semibold small">Thương hiệu <span className="text-danger">*</span></label>
-                      </label>
                       <select
                         className="form-select"
                         required
@@ -1939,9 +2519,7 @@ export default function AdminDashboard() {
                   {/* Giá bán & Trạng thái */}
                   <div className="row g-3 mb-3">
                     <div className="col-md-6">
-                      <label className="form-label fw-semibold small">
                       <label className="form-label fw-semibold small">Đơn giá <span className="text-danger">*</span></label>
-                      </label>
                       <div className="input-group">
                         <input
                           type="number"
@@ -1959,9 +2537,7 @@ export default function AdminDashboard() {
                     </div>
 
                     <div className="col-md-6">
-                      <label className="form-label fw-semibold small">
                       <label className="form-label fw-semibold small">Trạng thái <span className="text-danger">*</span></label>
-                      </label>
                       <select
                         className="form-select"
                         required
@@ -2009,21 +2585,16 @@ export default function AdminDashboard() {
                     Hủy bỏ
                   </button>
                   <button
-                      type="submit"
-                      className="btn btn-primary btn-sm px-4 fw-bold shadow-sm"
-                      disabled={isSubmittingProduct}
+                    type="submit"
+                    className="btn btn-primary btn-sm px-4 fw-bold shadow-sm"
+                    disabled={isSubmittingProduct}
                   >
-                    {isSubmittingProduct ? (
-                        <>
-                          <span className="spinner-border spinner-border-sm me-2"></span>
-                          Đang lưu...
-                        </>
-                    ) : (
-                        <>
-                          <i className="bi bi-check-lg me-1"></i>
-                          {isEditingProduct ? 'Cập Nhật Sản Phẩm' : 'Thêm Sản Phẩm'}
-                        </>
-                    )}
+                    <i className={`bi ${isSubmittingProduct ? 'bi-hourglass-split' : 'bi-check-lg'} me-1`}></i>
+                    {isSubmittingProduct
+                      ? 'Đang lưu...'
+                      : isEditingProduct
+                        ? 'Cập Nhật Bản Ghi'
+                        : 'Lưu Vào Database'}
                   </button>
                 </div>
               </form>
@@ -2057,9 +2628,7 @@ export default function AdminDashboard() {
                 <div className="modal-body p-4">
                   {/* Tên Danh Mục */}
                   <div className="mb-3">
-                    <label className="form-label fw-semibold small">
                     <label className="form-label fw-semibold small">Tên danh mục <span className="text-danger">*</span></label>
-                    </label>
                     <input
                       type="text"
                       className="form-control"
@@ -2081,9 +2650,7 @@ export default function AdminDashboard() {
 
                   {/* Slug */}
                   <div className="mb-3">
-                    <label className="form-label fw-semibold small">
                     <label className="form-label fw-semibold small">Đường dẫn Slug <span className="text-danger">*</span></label>
-                    </label>
                     <div className="input-group">
                       <span className="input-group-text bg-light text-muted small">/category/</span>
                       <input
@@ -2115,9 +2682,7 @@ export default function AdminDashboard() {
 
                   {/* Trạng thái */}
                   <div className="mb-3">
-                    <label className="form-label fw-semibold small">
                     <label className="form-label fw-semibold small">Trạng thái <span className="text-danger">*</span></label>
-                    </label>
                     <select
                       className="form-select"
                       value={categoryFormData.status}
@@ -2138,23 +2703,16 @@ export default function AdminDashboard() {
                     Hủy bỏ
                   </button>
                   <button
-                      type="submit"
-                      className="btn btn-success btn-sm px-4 fw-bold shadow-sm"
-                      disabled={isSubmittingCategory}
+                    type="submit"
+                    className="btn btn-success btn-sm px-4 fw-bold shadow-sm"
+                    disabled={isSubmittingCategory}
                   >
-                    {isSubmittingCategory ? (
-                        <>
-                          <span className="spinner-border spinner-border-sm me-2"></span>
-                          Đang lưu...
-                        </>
-                    ) : (
-                        <>
-                          <i className="bi bi-check-lg me-1"></i>
-                          {isEditingCategory
-                              ? 'Cập Nhật Danh Mục'
-                              : 'Thêm Danh Mục'}
-                        </>
-                    )}
+                    <i className={`bi ${isSubmittingCategory ? 'bi-hourglass-split' : 'bi-check-lg'} me-1`}></i>
+                    {isSubmittingCategory
+                      ? 'Đang lưu...'
+                      : isEditingCategory
+                        ? 'Cập Nhật Danh Mục'
+                        : 'Lưu Danh Mục'}
                   </button>
                 </div>
               </form>
@@ -2188,9 +2746,7 @@ export default function AdminDashboard() {
                 <div className="modal-body p-4">
                   {/* Tên Thương Hiệu */}
                   <div className="mb-3">
-                    <label className="form-label fw-semibold small">
                     <label className="form-label fw-semibold small">Tên thương hiệu <span className="text-danger">*</span></label>
-                    </label>
                     <input
                       type="text"
                       className="form-control"
@@ -2212,9 +2768,7 @@ export default function AdminDashboard() {
 
                   {/* Slug */}
                   <div className="mb-3">
-                    <label className="form-label fw-semibold small">
                     <label className="form-label fw-semibold small">Đường dẫn Slug <span className="text-danger">*</span></label>
-                    </label>
                     <div className="input-group">
                       <span className="input-group-text bg-light text-muted small">/brand/</span>
                       <input
@@ -2260,9 +2814,7 @@ export default function AdminDashboard() {
 
                   {/* Trạng thái */}
                   <div className="mb-3">
-                    <label className="form-label fw-semibold small">
                     <label className="form-label fw-semibold small">Trạng thái <span className="text-danger">*</span></label>
-                    </label>
                     <select
                       className="form-select"
                       value={brandFormData.status}
@@ -2283,23 +2835,143 @@ export default function AdminDashboard() {
                     Hủy bỏ
                   </button>
                   <button
-                      type="submit"
-                      className="btn btn-info text-white btn-sm px-4 fw-bold shadow-sm"
-                      disabled={isSubmittingBrand}
+                    type="submit"
+                    className="btn btn-info text-white btn-sm px-4 fw-bold shadow-sm"
+                    disabled={isSubmittingBrand}
                   >
-                    {isSubmittingBrand ? (
-                        <>
-                          <span className="spinner-border spinner-border-sm me-2"></span>
-                          Đang lưu...
-                        </>
-                    ) : (
-                        <>
-                          <i className="bi bi-check-lg me-1"></i>
-                          {isEditingBrand
-                              ? 'Cập Nhật Thương Hiệu'
-                              : 'Thêm Thương Hiệu'}
-                        </>
-                    )}
+                    <i className={`bi ${isSubmittingBrand ? 'bi-hourglass-split' : 'bi-check-lg'} me-1`}></i>
+                    {isSubmittingBrand
+                      ? 'Đang lưu...'
+                      : isEditingBrand
+                        ? 'Cập Nhật Thương Hiệu'
+                        : 'Lưu Thương Hiệu'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ================= 10. MODAL THÊM / SỬA USERS ================= */}
+      {showUserModal && (
+        <div
+          className="modal fade show d-block"
+          tabIndex="-1"
+          style={{ backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1060 }}
+        >
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content rounded-4 border-0 shadow">
+              <div className="modal-header bg-light py-3">
+                <h5 className="modal-title fw-bold text-dark d-flex align-items-center">
+                  <i className={`bi ${isEditingUser ? 'bi-pencil-square text-primary' : 'bi-person-plus-fill text-warning'} me-2`}></i>
+                  {isEditingUser ? 'Chỉnh Sửa Tài Khoản' : 'Thêm Tài Khoản Mới'}
+                </h5>
+                <button
+                  type="button"
+                  className="btn-close"
+                  onClick={() => setShowUserModal(false)}
+                ></button>
+              </div>
+
+              <form noValidate className={userValidated ? 'was-validated' : ''} onSubmit={handleSubmitUser}>
+                <div className="modal-body p-4">
+                  {/* Họ và tên */}
+                  <div className="mb-3">
+                    <label className="form-label fw-semibold small">Họ và Tên <span className="text-danger">*</span></label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      placeholder="VD: Nguyễn Văn A"
+                      required
+                      value={userFormData.full_name}
+                      onChange={(e) => setUserFormData({ ...userFormData, full_name: e.target.value })}
+                    />
+                    <div className="invalid-feedback">Vui lòng nhập họ và tên.</div>
+                  </div>
+
+                  {/* Email */}
+                  <div className="mb-3">
+                    <label className="form-label fw-semibold small">Email Đăng Nhập <span className="text-danger">*</span></label>
+                    <input
+                      type="email"
+                      className="form-control font-monospace"
+                      placeholder="VD: staff01@techmart.vn"
+                      required
+                      value={userFormData.email}
+                      onChange={(e) => setUserFormData({ ...userFormData, email: e.target.value })}
+                    />
+                    <div className="invalid-feedback">Vui lòng nhập email hợp lệ.</div>
+                  </div>
+
+                  {/* Mật khẩu */}
+                  <div className="mb-3">
+                    <label className="form-label fw-semibold small">
+                      {isEditingUser ? 'Mật khẩu mới (Bỏ trống nếu không đổi)' : <>Mật khẩu <span className="text-danger">*</span></>}
+                    </label>
+                    <input
+                      type="password"
+                      className="form-control"
+                      placeholder="••••••••"
+                      required={!isEditingUser}
+                      value={userFormData.password}
+                      onChange={(e) => setUserFormData({ ...userFormData, password: e.target.value })}
+                    />
+                    <div className="invalid-feedback">Vui lòng nhập mật khẩu.</div>
+                  </div>
+
+                  {/* Số điện thoại */}
+                  <div className="mb-3">
+                    <label className="form-label fw-semibold small">Số Điện Thoại</label>
+                    <input
+                      type="tel"
+                      className="form-control"
+                      placeholder="VD: 0988123456"
+                      value={userFormData.phone}
+                      onChange={(e) => setUserFormData({ ...userFormData, phone: e.target.value })}
+                    />
+                  </div>
+
+                  {/* Vai trò (Role) & Trạng thái */}
+                  <div className="row g-2">
+                    <div className="col-6">
+                      <label className="form-label fw-semibold small">Vai Trò (Role) <span className="text-danger">*</span></label>
+                      <select
+                        className="form-select"
+                        value={userFormData.role}
+                        onChange={(e) => setUserFormData({ ...userFormData, role: e.target.value })}
+                      >
+                        <option value="STAFF">Nhân viên</option>
+                        <option value="ADMIN">Quản trị viên</option>
+                        <option value="CUSTOMER">CUSTOMER (Khách hàng)</option>
+                      </select>
+                    </div>
+
+                    <div className="col-6">
+                      <label className="form-label fw-semibold small">Trạng Thái <span className="text-danger">*</span></label>
+                      <select
+                        className="form-select"
+                        value={userFormData.status}
+                        onChange={(e) => setUserFormData({ ...userFormData, status: e.target.value })}
+                      >
+                        <option value="ACTIVE">Đang hoạt động</option>
+                        <option value="INACTIVE">Đã khóa</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="modal-footer bg-light py-2">
+                  <button
+                    type="button"
+                    className="btn btn-secondary btn-sm px-3"
+                    onClick={() => setShowUserModal(false)}
+                  >
+                    Hủy bỏ
+                  </button>
+                  <button type="submit" className="btn btn-warning text-dark btn-sm px-4 fw-bold shadow-sm">
+                    <i className="bi bi-check-lg me-1"></i>
+                    {isEditingUser ? 'Cập Nhật Tài Khoản' : 'Lưu Tài Khoản'}
                   </button>
                 </div>
               </form>
@@ -2310,3 +2982,21 @@ export default function AdminDashboard() {
     </div>
   );
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

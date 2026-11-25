@@ -149,3 +149,319 @@ small,
 [style*="font-size: 15px"] {
   font-size: 17px !important;
 }
+
+/* Đồng bộ góc bo cho các nút trên toàn bộ giao diện */
+button,
+input[type="button"],
+input[type="submit"],
+input[type="reset"],
+.btn,
+.btn.rounded-pill,
+.btn.rounded-circle {
+  border-radius: 10px !important;
+}
+
+
+/* Homepage offer banners: keep copy in its own column beside the product images. */
+.hero .hero-grid {
+  grid-template-columns: minmax(0, 1.35fr) minmax(300px, 1fr) !important;
+  align-items: stretch;
+  gap: 16px;
+}
+.hero .deal-carousel {
+  min-height: 410px !important;
+  background: linear-gradient(125deg, #073f45 0%, #11636c 65%, #173941 100%) !important;
+}
+.hero .deal-slide.active {
+  display: flex;
+  position: relative;
+  overflow: hidden;
+  min-height: 410px;
+  align-items: stretch;
+}
+.hero .deal-slide .deal-media {
+  position: absolute !important;
+  inset: 0 0 0 auto !important;
+  width: 42%;
+  z-index: 0;
+  display: block;
+  padding: 0;
+  overflow: hidden;
+  background: #0d5961;
+}
+.hero .deal-slide .deal-media::after {
+  content: "";
+  display: block !important;
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: linear-gradient(90deg, #0d5961 0%, rgba(13, 89, 97, .28) 60%, transparent 100%);
+}
+.hero .deal-slide .deal-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain !important;
+  border-radius: 18px;
+}
+.hero .deal-slide .deal-body {
+  position: relative;
+  z-index: 2;
+  width: 57%;
+  max-width: none !important;
+  min-height: 410px;
+  padding: 34px 10px 34px 36px !important;
+  justify-content: center;
+  align-items: flex-start;
+  overflow-wrap: anywhere;
+}
+.hero .deal-slide .deal-body h2 {
+  max-width: 17ch;
+  font-size: clamp(1.65rem, 2.6vw, 2.45rem) !important;
+  line-height: 1.08 !important;
+  margin: 12px 0 10px !important;
+}
+.hero .deal-slide .deal-body p {
+  max-width: 34ch;
+  font-size: .95rem !important;
+  line-height: 1.5;
+  margin-bottom: 14px !important;
+}
+.hero .deal-slide .deal-price {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  margin-bottom: 16px !important;
+}
+.hero .deal-slide .deal-price .big { font-size: clamp(1.25rem, 2vw, 1.65rem) !important; }
+.hero .deal-slide .deal-price s { margin-left: 0 !important; font-size: .9rem !important; }
+.hero .deal-slide .deal-body .btn-bz { width: fit-content; max-width: 100%; min-height: 46px; padding: 12px 22px; white-space: normal; }
+.hero .promo-stack {
+  min-height: 460px;
+  grid-template-rows: repeat(2, minmax(0, 1fr)) !important;
+  gap: 16px;
+}
+.hero .promo-card {
+  min-height: 222px !important;
+  padding: 22px !important;
+  justify-content: space-between;
+  background: #0d5961 !important;
+}
+.hero .promo-card.alt { background: #303a45 !important; }
+.hero .promo-card > .promo-bg {
+  position: absolute !important;
+  inset: 0 0 0 auto !important;
+  width: 42%;
+  z-index: 0 !important;
+  overflow: hidden;
+}
+.hero .promo-card .promo-bg img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: .9 !important;
+}
+.hero .promo-card > .promo-bg::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, #0d5961 0%, rgba(13,89,97,.28) 60%, transparent 100%);
+}
+.hero .promo-card.alt > .promo-bg::after {
+  background: linear-gradient(90deg, #303a45 0%, rgba(48,58,69,.28) 60%, transparent 100%);
+}
+.hero .promo-card > div:not(.promo-bg),
+.hero .promo-card > .promo-link { position: relative; z-index: 2; max-width: 63%; }
+.hero .promo-card h3 {
+  max-width: 25ch;
+  font-size: clamp(1rem, 1.35vw, 1.2rem) !important;
+  line-height: 1.15 !important;
+  margin: 8px 0 0 !important;
+  overflow-wrap: anywhere;
+}
+.hero .promo-card p {
+  max-width: 34ch;
+  font-size: .82rem !important;
+  line-height: 1.4;
+  margin-top: 7px !important;
+}
+.hero .promo-card .promo-link { margin-top: 10px !important; white-space: normal; }
+
+@media (max-width: 900px) {
+  .hero .hero-grid { grid-template-columns: 1fr !important; }
+  .hero .deal-carousel, .hero .deal-slide.active, .hero .deal-slide .deal-body { min-height: 360px !important; }
+  .hero .promo-stack { min-height: 0; grid-template-columns: repeat(2, minmax(0, 1fr)) !important; grid-template-rows: auto !important; }
+  .hero .promo-card { min-height: 222px !important; }
+}
+@media (max-width: 560px) {
+  .hero .deal-carousel, .hero .deal-slide.active { min-height: 430px !important; }
+  .hero .deal-slide .deal-media { width: 42%; padding: 12px 8px; opacity: .18; }
+  .hero .deal-slide .deal-body { width: 100%; min-height: 430px !important; padding: 26px 22px !important; }
+  .hero .deal-slide .deal-body h2 { max-width: 16ch; font-size: 1.8rem !important; }
+  .hero .deal-slide .deal-body p { max-width: 30ch; }
+  .hero .promo-stack { grid-template-columns: 1fr !important; }
+  .hero .promo-card { min-height: 200px !important; }
+}
+
+/* Một họ font duy nhất cho toàn bộ giao diện; giữ font riêng cho Bootstrap Icons. */
+:root {
+  --app-font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+  --f-display: var(--app-font-family);
+  --f-body: var(--app-font-family);
+  --f-mono: var(--app-font-family);
+  --bs-body-font-family: var(--app-font-family);
+  --bs-font-sans-serif: var(--app-font-family);
+  --bs-font-monospace: var(--app-font-family);
+}
+
+html,
+body,
+body :not(.bi),
+input::placeholder,
+textarea::placeholder {
+  font-family: var(--app-font-family) !important;
+}
+
+/* Match the small promo cards: image fills the right side with a gradient into the copy. */
+.hero .deal-slide .deal-media > .deal-main-image {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+  max-width: none !important;
+  object-fit: cover !important;
+  object-position: center;
+  border-radius: 0;
+  opacity: .9 !important;
+}
+
+
+
+
+
+/* Compact promo buttons share the main CTA color while fitting the small cards. */
+.hero .promo-card .promo-action {
+  position: relative;
+  z-index: 2;
+  align-self: flex-start;
+  width: fit-content;
+  max-width: 63%;
+  min-height: 36px;
+  padding: 8px 12px !important;
+  border-radius: 8px;
+  font-size: .8rem !important;
+  line-height: 1.2;
+  white-space: normal;
+}
+
+/* Keep the large banner and its image the full height of the grid row. */
+.hero .hero-grid > .deal-carousel {
+  height: 100% !important;
+  min-height: 0 !important;
+}
+.hero .hero-grid > .deal-carousel > .deal-slide.active {
+  height: 100% !important;
+  min-height: 100% !important;
+}
+
+/* Smaller flash-sale heading to balance the countdown and product cards. */
+.flash-panel .flash-title h2 {
+  font-size: clamp(1.25rem, 1.8vw, 1.6rem) !important;
+  line-height: 1.12 !important;
+  margin-bottom: 6px;
+}
+
+.hero .deal-slide.active > .deal-media {
+  top: 0 !important;
+  bottom: 0 !important;
+  height: auto !important;
+}
+@media (max-width: 900px) {
+  .hero .hero-grid > .deal-carousel {
+    height: auto !important;
+    min-height: 360px !important;
+  }
+  .hero .hero-grid > .deal-carousel > .deal-slide.active {
+    height: auto !important;
+    min-height: 360px !important;
+  }
+}
+@media (max-width: 560px) {
+  .hero .hero-grid > .deal-carousel,
+  .hero .hero-grid > .deal-carousel > .deal-slide.active {
+    min-height: 430px !important;
+  }
+}
+
+/* Flash sale products form a compact, horizontally scrollable strip. */
+.flash .flash-track {
+  display: flex !important;
+  grid-template-columns: none !important;
+  gap: 12px;
+  padding: 16px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: thin;
+  scrollbar-color: #697586 transparent;
+  background: rgba(255, 255, 255, .08);
+}
+.flash .flash-track > .flash-item {
+  flex: 0 0 clamp(220px, 24%, 260px);
+  min-width: 220px;
+  max-width: 260px;
+  padding: 14px;
+  border-radius: 8px;
+  scroll-snap-align: start;
+}
+.flash .flash-track .fi-frame {
+  aspect-ratio: 1.2 / 1;
+  margin-bottom: 10px;
+}
+.flash .flash-track .fi-body h4 {
+  margin: 5px 0 8px !important;
+  font-size: .98rem !important;
+  line-height: 1.28 !important;
+  font-weight: 700;
+}
+.flash .flash-track .fi-cat,
+.flash .flash-track .stock-lbl {
+  font-size: .8rem !important;
+  line-height: 1.3;
+}
+.flash .flash-track .fi-price {
+  gap: 7px;
+  margin-bottom: 8px;
+}
+.flash .flash-track .fi-price .cur {
+  font-size: .95rem !important;
+}
+.flash .flash-track .fi-price .old {
+  font-size: .72rem !important;
+}
+.flash .flash-track::-webkit-scrollbar { height: 8px; }
+.flash .flash-track::-webkit-scrollbar-thumb { background: #697586; border-radius: 8px; }
+
+@media (max-width: 560px) {
+  .flash .flash-track > .flash-item { flex-basis: 78vw; }
+}
+
+.category-banner-image {
+  position: relative;
+  min-height: 220px;
+  overflow: hidden;
+  border-radius: 18px;
+  background: linear-gradient(110deg, #b50019, #e32636 58%, #8f142a);
+  box-shadow: 0 4px 14px rgba(25, 35, 50, .12);
+}
+.category-banner-image img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+@media (max-width: 700px) {
+  .category-banner-image { min-height: 0; }
+}
