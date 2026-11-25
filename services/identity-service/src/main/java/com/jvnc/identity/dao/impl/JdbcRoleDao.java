@@ -25,6 +25,37 @@ public class JdbcRoleDao implements RoleDao {
     }
 
     @Override
+    public List<Role> findAll() {
+        String sql = """
+            SELECT id, code, name
+            FROM roles
+            ORDER BY id
+            """;
+
+        List<Role> roles = new ArrayList<>();
+        Connection connection = DataSourceUtils.getConnection(dataSource);
+
+        try (
+                PreparedStatement statement =
+                        connection.prepareStatement(sql);
+                ResultSet resultSet = statement.executeQuery()
+        ) {
+            while (resultSet.next()) {
+                roles.add(mapRole(resultSet));
+            }
+
+            return roles;
+        } catch (SQLException exception) {
+            throw databaseException(
+                    "Lỗi khi lấy danh sách quyền",
+                    exception
+            );
+        } finally {
+            DataSourceUtils.releaseConnection(connection, dataSource);
+        }
+    }
+
+    @Override
     public Optional<Role> findByCode(String code) {
         String sql = """
                 SELECT id, code, name
@@ -107,6 +138,28 @@ public class JdbcRoleDao implements RoleDao {
         } catch (SQLException exception) {
             throw databaseException(
                     "Lỗi khi gán quyền cho người dùng",
+                    exception
+            );
+        } finally {
+            DataSourceUtils.releaseConnection(connection, dataSource);
+        }
+    }
+
+    @Override
+    public void deleteRolesByUserId(long userId) {
+        String sql = """
+            DELETE FROM user_roles
+            WHERE user_id = ?
+            """;
+
+        Connection connection = DataSourceUtils.getConnection(dataSource);
+
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setLong(1, userId);
+            statement.executeUpdate();
+        } catch (SQLException exception) {
+            throw databaseException(
+                    "Lỗi khi xóa quyền cũ của người dùng",
                     exception
             );
         } finally {

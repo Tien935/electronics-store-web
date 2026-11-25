@@ -122,4 +122,34 @@ public class GlobalExceptionHandler {
                 .status(HttpStatus.FORBIDDEN)
                 .body(response);
     }
+
+    @ExceptionHandler(UserNotFoundException.class)
+    public ResponseEntity<ApiErrorResponse> handleUserNotFound(
+            UserNotFoundException exception,
+            HttpServletRequest request
+    ) {
+        HttpStatus status = HttpStatus.NOT_FOUND;
+
+        return ResponseEntity.status(status).body(createResponse(
+                status,
+                exception.getMessage(),
+                request.getRequestURI(),
+                Map.of()
+        ));
+    }
+
+    @ExceptionHandler(AdminUserOperationException.class)
+    public ResponseEntity<ApiErrorResponse> handleAdminUserOperation(
+            AdminUserOperationException exception,
+            HttpServletRequest request
+    ) {
+        HttpStatus status = HttpStatus.CONFLICT;
+
+        return ResponseEntity.status(status).body(createResponse(
+                status,
+                exception.getMessage(),
+                request.getRequestURI(),
+                Map.of()
+        ));
+    }
 }

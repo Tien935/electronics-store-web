@@ -22,6 +22,13 @@ const mapBrandFromApi = (brand) => ({
   ...brand,
   logo_url: brand.logoUrl,
 });
+const mapUserFromApi = (user) => ({
+  ...user,
+  full_name: user.fullName,
+  role: user.roles?.[0] || 'CUSTOMER',
+  created_at: user.createdAt,
+  updated_at: user.updatedAt,
+});
 export default function AdminDashboard() {
   const router = useRouter();
   const [currentUser, setCurrentUser] = useState(null);
@@ -33,64 +40,13 @@ export default function AdminDashboard() {
 
   // Products, categories và brands được tải từ Catalog API thật.
 
-  // Dữ liệu demo tạm thời; Identity Service hiện chưa có API quản trị người dùng.
-  const initialUsers = [
-    {
-      id: 1,
-      email: 'admin@techmart.vn',
-      full_name: 'Admin',
-      phone: '0988123456',
-      role: 'ADMIN',
-      status: 'ACTIVE',
-      created_at: '2026-11-01 08:00:00',
-      updated_at: '2026-11-20 10:00:00',
-    },
-    {
-      id: 2,
-      email: 'staff01@techmart.vn',
-      full_name: 'Lê Văn Nhân Viên 1',
-      phone: '0977222333',
-      role: 'STAFF',
-      status: 'ACTIVE',
-      created_at: '2026-11-10 09:15:00',
-      updated_at: '2026-11-21 11:30:00',
-    },
-    {
-      id: 3,
-      email: 'staff02@techmart.vn',
-      full_name: 'Trần Thị Thu Ngân',
-      phone: '0912444555',
-      role: 'STAFF',
-      status: 'ACTIVE',
-      created_at: '2026-11-12 14:30:00',
-      updated_at: '2026-11-22 09:00:00',
-    },
-    {
-      id: 4,
-      email: 'customer01@gmail.com',
-      full_name: 'Hoàng Khách Hàng',
-      phone: '0905888999',
-      role: 'CUSTOMER',
-      status: 'ACTIVE',
-      created_at: '2026-11-15 16:45:00',
-      updated_at: '2026-11-22 10:15:00',
-    },
-    {
-      id: 5,
-      email: 'customer02@gmail.com',
-      full_name: 'Phạm Minh Khôi',
-      phone: '0933777888',
-      role: 'CUSTOMER',
-      status: 'INACTIVE',
-      created_at: '2026-11-16 11:20:00',
-      updated_at: '2026-11-23 15:40:00',
-    },
-  ];
-
   const [categories, setCategories] = useState([]);
   const [brands, setBrands] = useState([]);
   const [products, setProducts] = useState([]);
-  const [users, setUsers] = useState(initialUsers);
+  const [users, setUsers] = useState([]);
+  const [roles, setRoles] = useState([]);
+  const [isSubmittingUser, setIsSubmittingUser] = useState(false);
+  const [busyUserId, setBusyUserId] = useState(null);
   const [orders, setOrders] = useState(DEMO_ORDERS);
   const [orderHistory, setOrderHistory] = useState(DEMO_ORDER_STATUS_HISTORY);
   const [orderItems, setOrderItems] = useState(DEMO_ORDER_ITEMS);
@@ -281,6 +237,48 @@ export default function AdminDashboard() {
 
     initializeAdminPage();
   }, [router]);
+
+  useEffect(() => {
+    const accessToken = localStorage.getItem('accessToken');
+    const savedUser = localStorage.getItem('currentUser') || localStorage.getItem('adminUser');
+    if (!accessToken || !savedUser) return;
+
+    let admin;
+    try {
+      admin = JSON.parse(savedUser);
+    } catch {
+      return;
+    }
+    if (admin.role !== 'ADMIN' && !admin.roles?.includes('ADMIN')) return;
+
+    let cancelled = false;
+    const loadUsers = async () => {
+      try {
+        const [usersResponse, rolesResponse] = await Promise.all([
+          fetch(`${API_BASE_URL}/api/admin/users`, {
+            headers: { Authorization: `Bearer ${accessToken}` },
+          }),
+          fetch(`${API_BASE_URL}/api/admin/roles`, {
+            headers: { Authorization: `Bearer ${accessToken}` },
+          }),
+        ]);
+        if (!usersResponse.ok || !rolesResponse.ok) {
+          throw new Error(await getApiErrorMessage(!usersResponse.ok ? usersResponse : rolesResponse));
+        }
+        const [userData, roleData] = await Promise.all([usersResponse.json(), rolesResponse.json()]);
+        if (!cancelled) {
+          setUsers(userData.map(mapUserFromApi));
+          setRoles(roleData);
+        }
+      } catch (error) {
+        if (!cancelled) {
+          setAlertNotice({ show: true, message: error.message || 'Không thể tải tài khoản.', type: 'danger' });
+        }
+      }
+    };
+    loadUsers();
+    return () => { cancelled = true; };
+  }, []);
 
   const userRoles = Array.isArray(currentUser?.roles) ? currentUser.roles : [];
   const isAdmin = currentUser?.role === 'ADMIN' || userRoles.includes('ADMIN');
@@ -950,7 +948,7 @@ export default function AdminDashboard() {
     showAlert('Đã xuất dữ liệu thương hiệu thành công (file CSV)!', 'success');
   };
 
-  // CRUD người dùng tạm thời chỉ cập nhật state phía Frontend.
+  // Quản lý tài khoản qua Identity Service.
   const handleOpenAddUser = () => {
     setIsEditingUser(false);
     setCurrentEditUserId(null);
@@ -981,39 +979,54 @@ export default function AdminDashboard() {
     setShowUserModal(true);
   };
 
-  const handleDeleteUser = (userId, email) => {
-    if (userId === 1) {
-      alert('Không thể xóa tài khoản Quản trị viên hệ thống gốc (ID: 1)!');
-      return;
-    }
-    if (confirm(`Bạn có chắc chắn muốn xóa tài khoản [${email}] (ID: ${userId}) khỏi hệ thống không?`)) {
-      setUsers((prev) => prev.filter((u) => u.id !== userId));
-      showAlert(`Đã xóa tài khoản [${email}] thành công!`, 'success');
+  const handleDeleteUser = async (userId, email) => {
+    if (!window.confirm(`Xóa vĩnh viễn tài khoản [${email}] (ID: ${userId}) khỏi database?`)) return;
+    const accessToken = localStorage.getItem('accessToken');
+    if (!accessToken) { router.replace('/login'); return; }
+    setBusyUserId(userId);
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/admin/users/${userId}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      if (response.status === 401) { router.replace('/login'); return; }
+      if (!response.ok) throw new Error(await getApiErrorMessage(response));
+      setUsers((previous) => previous.filter((user) => user.id !== userId));
+      showAlert(`Đã xóa tài khoản [${email}] khỏi database.`, 'success');
+    } catch (error) {
+      showAlert(error.message || 'Không thể xóa tài khoản.', 'danger');
+    } finally {
+      setBusyUserId(null);
     }
   };
 
-  const handleToggleUserStatus = (userId) => {
-    if (userId === 1) {
-      alert('Không thể vô hiệu hóa tài khoản Quản trị viên hệ thống gốc (ID: 1)!');
-      return;
+  const handleToggleUserStatus = async (userId) => {
+    const user = users.find((item) => item.id === userId);
+    if (!user) return;
+    const status = user.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
+    if (!window.confirm(`${status === 'INACTIVE' ? 'Khóa' : 'Mở khóa'} tài khoản [${user.email}]?`)) return;
+    const accessToken = localStorage.getItem('accessToken');
+    if (!accessToken) { router.replace('/login'); return; }
+    setBusyUserId(userId);
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/admin/users/${userId}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` },
+        body: JSON.stringify({ status }),
+      });
+      if (response.status === 401) { router.replace('/login'); return; }
+      if (!response.ok) throw new Error(await getApiErrorMessage(response));
+      const saved = mapUserFromApi(await response.json());
+      setUsers((previous) => previous.map((item) => item.id === userId ? saved : item));
+      showAlert(`Tài khoản [${user.email}] đã ${status === 'ACTIVE' ? 'mở khóa' : 'khóa'}.`, 'success');
+    } catch (error) {
+      showAlert(error.message || 'Không thể đổi trạng thái.', 'danger');
+    } finally {
+      setBusyUserId(null);
     }
-    setUsers((prev) =>
-      prev.map((u) => {
-        if (u.id === userId) {
-          const newStatus = u.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
-          showAlert(`Đã đổi trạng thái [${u.email}] sang ${newStatus === 'ACTIVE' ? 'Đang hoạt động' : 'Đã khóa'}!`, 'info');
-          return {
-            ...u,
-            status: newStatus,
-            updated_at: new Date().toISOString().slice(0, 19).replace('T', ' '),
-          };
-        }
-        return u;
-      })
-    );
   };
 
-  const handleSubmitUser = (e) => {
+  const handleSubmitUser = async (e) => {
     e.preventDefault();
     const form = e.currentTarget;
     if (form.checkValidity() === false) {
@@ -1022,55 +1035,44 @@ export default function AdminDashboard() {
       return;
     }
 
-    const trimmedEmail = userFormData.email.trim();
-    const trimmedFullName = userFormData.full_name.trim();
-
-    // Kiểm tra duy nhất email trong tài khoản
-    const isDuplicateEmail = users.some(
-      (u) => u.email.toLowerCase() === trimmedEmail.toLowerCase() && u.id !== currentEditUserId
-    );
-    if (isDuplicateEmail) {
-      alert(`Lỗi Ràng Buộc duy nhất: Email "${trimmedEmail}" đã tồn tại trong tài khoản!`);
-      return;
-    }
-
-    const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
-
-    if (isEditingUser && currentEditUserId) {
-      setUsers((prev) =>
-        prev.map((u) => {
-          if (u.id === currentEditUserId) {
-            return {
-              ...u,
-              email: trimmedEmail,
-              full_name: trimmedFullName,
-              phone: userFormData.phone.trim(),
-              role: userFormData.role,
-              status: userFormData.status,
-              updated_at: now,
-            };
-          }
-          return u;
-        })
+    const accessToken = localStorage.getItem('accessToken');
+    if (!accessToken) { router.replace('/login'); return; }
+    const body = {
+      fullName: userFormData.full_name.trim(),
+      phone: userFormData.phone.trim(),
+      role: userFormData.role,
+      status: userFormData.status,
+      ...(!isEditingUser && {
+        email: userFormData.email.trim(),
+        password: userFormData.password,
+      }),
+    };
+    setIsSubmittingUser(true);
+    try {
+      const response = await fetch(
+        isEditingUser
+          ? `${API_BASE_URL}/api/admin/users/${currentEditUserId}`
+          : `${API_BASE_URL}/api/admin/users`,
+        {
+          method: isEditingUser ? 'PUT' : 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` },
+          body: JSON.stringify(body),
+        }
       );
-      showAlert(`Đã cập nhật thông tin tài khoản [${trimmedEmail}] (ID: ${currentEditUserId}) thành công!`, 'success');
-    } else {
-      const nextId = users.length > 0 ? Math.max(...users.map((u) => u.id)) + 1 : 1;
-      const newUser = {
-        id: nextId,
-        email: trimmedEmail,
-        full_name: trimmedFullName,
-        phone: userFormData.phone.trim(),
-        role: userFormData.role,
-        status: userFormData.status,
-        created_at: now,
-        updated_at: now,
-      };
-      setUsers([newUser, ...users]);
-      showAlert(`Đã thêm tài khoản [${trimmedEmail}] thành công!`, 'success');
+      if (response.status === 401) { router.replace('/login'); return; }
+      if (!response.ok) throw new Error(await getApiErrorMessage(response));
+      const saved = mapUserFromApi(await response.json());
+      setUsers((previous) => isEditingUser
+        ? previous.map((item) => item.id === saved.id ? saved : item)
+        : [saved, ...previous]);
+      showAlert(`Đã ${isEditingUser ? 'cập nhật' : 'thêm'} tài khoản [${saved.email}].`, 'success');
+      setShowUserModal(false);
+      setUserValidated(false);
+    } catch (error) {
+      showAlert(error.message || 'Không thể lưu tài khoản.', 'danger');
+    } finally {
+      setIsSubmittingUser(false);
     }
-
-    setShowUserModal(false);
   };
 
   const handleExportUserCSV = () => {
@@ -1345,7 +1347,7 @@ export default function AdminDashboard() {
                 className="nav-link rounded-3 px-3 py-2 text-warning fw-semibold d-flex align-items-center gap-3 w-100 text-start border-0 bg-transparent hover-primary"
               >
                 <i className="bi bi-plus-circle fs-5"></i>
-                {sidebarOpen && <span>+ Thêm Nhân Viên</span>}
+                {sidebarOpen && <span>+ Thêm Tài Khoản</span>}
               </button>
             </li>
             )}
@@ -2120,9 +2122,6 @@ export default function AdminDashboard() {
                       <i className="bi bi-people-fill me-2 text-warning"></i>
                       Tài Khoản Người Dùng & Phân Quyền
                     </h5>
-                    <small className="text-warning-emphasis">
-                      Dữ liệu demo — chưa đồng bộ với Identity Service.
-                    </small>
                   </div>
                   <div className="d-flex align-items-center gap-2">
                     <button
@@ -2266,6 +2265,7 @@ export default function AdminDashboard() {
                               <div className="btn-group btn-group-sm">
                                 <button
                                   onClick={() => handleToggleUserStatus(u.id)}
+                                  disabled={busyUserId !== null || u.id === currentUser?.id}
                                   className={`btn btn-light border ${u.status === 'ACTIVE' ? 'text-warning' : 'text-success'}`}
                                   title={u.status === 'ACTIVE' ? 'Khóa tài khoản' : 'Mở khóa tài khoản'}
                                 >
@@ -2282,7 +2282,7 @@ export default function AdminDashboard() {
                                   onClick={() => handleDeleteUser(u.id, u.email)}
                                   className="btn btn-light text-danger border"
                                   title="Xóa tài khoản"
-                                  disabled={u.id === 1}
+                                  disabled={busyUserId !== null || u.id === currentUser?.id}
                                 >
                                   <i className="bi bi-trash"></i>
                                 </button>
@@ -2594,7 +2594,7 @@ export default function AdminDashboard() {
                       ? 'Đang lưu...'
                       : isEditingProduct
                         ? 'Cập Nhật Bản Ghi'
-                        : 'Lưu Vào Database'}
+                        : 'Lưu sản phẩm'}
                   </button>
                 </div>
               </form>
@@ -2898,27 +2898,28 @@ export default function AdminDashboard() {
                       className="form-control font-monospace"
                       placeholder="VD: staff01@techmart.vn"
                       required
+                      disabled={isEditingUser}
                       value={userFormData.email}
                       onChange={(e) => setUserFormData({ ...userFormData, email: e.target.value })}
                     />
                     <div className="invalid-feedback">Vui lòng nhập email hợp lệ.</div>
                   </div>
 
-                  {/* Mật khẩu */}
-                  <div className="mb-3">
-                    <label className="form-label fw-semibold small">
-                      {isEditingUser ? 'Mật khẩu mới (Bỏ trống nếu không đổi)' : <>Mật khẩu <span className="text-danger">*</span></>}
-                    </label>
+                  {/* Mật khẩu chỉ dùng khi tạo tài khoản. */}
+                  {!isEditingUser && <div className="mb-3">
+                    <label className="form-label fw-semibold small">Mật khẩu <span className="text-danger">*</span></label>
                     <input
                       type="password"
                       className="form-control"
                       placeholder="••••••••"
-                      required={!isEditingUser}
+                      minLength={8}
+                      maxLength={72}
+                      required
                       value={userFormData.password}
                       onChange={(e) => setUserFormData({ ...userFormData, password: e.target.value })}
                     />
-                    <div className="invalid-feedback">Vui lòng nhập mật khẩu.</div>
-                  </div>
+                    <div className="invalid-feedback">Mật khẩu cần ít nhất 8 ký tự.</div>
+                  </div>}
 
                   {/* Số điện thoại */}
                   <div className="mb-3">
@@ -2941,9 +2942,9 @@ export default function AdminDashboard() {
                         value={userFormData.role}
                         onChange={(e) => setUserFormData({ ...userFormData, role: e.target.value })}
                       >
-                        <option value="STAFF">Nhân viên</option>
-                        <option value="ADMIN">Quản trị viên</option>
-                        <option value="CUSTOMER">CUSTOMER (Khách hàng)</option>
+                        {roles.map((role) => (
+                          <option key={role.id} value={role.code}>{role.name} ({role.code})</option>
+                        ))}
                       </select>
                     </div>
 
@@ -2969,9 +2970,9 @@ export default function AdminDashboard() {
                   >
                     Hủy bỏ
                   </button>
-                  <button type="submit" className="btn btn-warning text-dark btn-sm px-4 fw-bold shadow-sm">
+                  <button type="submit" disabled={isSubmittingUser || roles.length === 0} className="btn btn-warning text-dark btn-sm px-4 fw-bold shadow-sm">
                     <i className="bi bi-check-lg me-1"></i>
-                    {isEditingUser ? 'Cập Nhật Tài Khoản' : 'Lưu Tài Khoản'}
+                    {isSubmittingUser ? 'Đang lưu...' : isEditingUser ? 'Cập Nhật Tài Khoản' : 'Lưu Tài Khoản'}
                   </button>
                 </div>
               </form>

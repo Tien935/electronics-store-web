@@ -3,8 +3,8 @@ package com.jvnc.identity.dao.impl;
 import com.jvnc.identity.dao.UserDao;
 import com.jvnc.identity.model.User;
 import org.springframework.dao.DataAccessResourceFailureException;
-import org.springframework.stereotype.Repository;
 import org.springframework.jdbc.datasource.DataSourceUtils;
+import org.springframework.stereotype.Repository;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -35,19 +35,17 @@ public class JdbcUserDao implements UserDao {
     @Override
     public long create(User user) {
         String sql = """
-            INSERT INTO users
-                (email, password_hash, full_name, phone, status)
-            VALUES (?, ?, ?, ?, ?)
-            """;
+                INSERT INTO users
+                    (email, password_hash, full_name, phone, status)
+                VALUES (?, ?, ?, ?, ?)
+                """;
 
         Connection connection = DataSourceUtils.getConnection(dataSource);
 
-        try (
-                PreparedStatement statement = connection.prepareStatement(
-                        sql,
-                        Statement.RETURN_GENERATED_KEYS
-                )
-        ) {
+        try (PreparedStatement statement = connection.prepareStatement(
+                sql,
+                Statement.RETURN_GENERATED_KEYS
+        )) {
             statement.setString(1, user.getEmail());
             statement.setString(2, user.getPasswordHash());
             statement.setString(3, user.getFullName());
@@ -81,38 +79,41 @@ public class JdbcUserDao implements UserDao {
     @Override
     public Optional<User> findById(long id) {
         String sql = SELECT_COLUMNS + " WHERE id = ?";
+        Connection connection = DataSourceUtils.getConnection(dataSource);
 
-        try (
-                Connection connection = dataSource.getConnection();
-                PreparedStatement statement = connection.prepareStatement(sql)
-        ) {
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
             statement.setLong(1, id);
 
             try (ResultSet resultSet = statement.executeQuery()) {
                 if (resultSet.next()) {
                     return Optional.of(mapUser(resultSet));
                 }
+
                 return Optional.empty();
             }
         } catch (SQLException exception) {
-            throw databaseException("Lỗi khi tìm người dùng theo ID", exception);
+            throw databaseException(
+                    "Lỗi khi tìm người dùng theo ID",
+                    exception
+            );
+        } finally {
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 
     @Override
     public Optional<User> findByEmail(String email) {
         String sql = SELECT_COLUMNS + " WHERE email = ?";
+        Connection connection = DataSourceUtils.getConnection(dataSource);
 
-        try (
-                Connection connection = dataSource.getConnection();
-                PreparedStatement statement = connection.prepareStatement(sql)
-        ) {
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
             statement.setString(1, email);
 
             try (ResultSet resultSet = statement.executeQuery()) {
                 if (resultSet.next()) {
                     return Optional.of(mapUser(resultSet));
                 }
+
                 return Optional.empty();
             }
         } catch (SQLException exception) {
@@ -120,6 +121,8 @@ public class JdbcUserDao implements UserDao {
                     "Lỗi khi tìm người dùng theo email",
                     exception
             );
+        } finally {
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 
@@ -127,9 +130,9 @@ public class JdbcUserDao implements UserDao {
     public List<User> findAll() {
         String sql = SELECT_COLUMNS + " ORDER BY id DESC";
         List<User> users = new ArrayList<>();
+        Connection connection = DataSourceUtils.getConnection(dataSource);
 
         try (
-                Connection connection = dataSource.getConnection();
                 PreparedStatement statement = connection.prepareStatement(sql);
                 ResultSet resultSet = statement.executeQuery()
         ) {
@@ -143,6 +146,8 @@ public class JdbcUserDao implements UserDao {
                     "Lỗi khi lấy danh sách người dùng",
                     exception
             );
+        } finally {
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 
@@ -158,10 +163,9 @@ public class JdbcUserDao implements UserDao {
                 WHERE id = ?
                 """;
 
-        try (
-                Connection connection = dataSource.getConnection();
-                PreparedStatement statement = connection.prepareStatement(sql)
-        ) {
+        Connection connection = DataSourceUtils.getConnection(dataSource);
+
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
             statement.setString(1, user.getEmail());
             statement.setString(2, user.getPasswordHash());
             statement.setString(3, user.getFullName());
@@ -172,21 +176,48 @@ public class JdbcUserDao implements UserDao {
             return statement.executeUpdate() == 1;
         } catch (SQLException exception) {
             throw databaseException("Lỗi khi cập nhật người dùng", exception);
+        } finally {
+            DataSourceUtils.releaseConnection(connection, dataSource);
+        }
+    }
+
+    @Override
+    public boolean updateStatus(long id, String status) {
+        String sql = """
+                UPDATE users
+                SET status = ?
+                WHERE id = ?
+                """;
+
+        Connection connection = DataSourceUtils.getConnection(dataSource);
+
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setString(1, status);
+            statement.setLong(2, id);
+
+            return statement.executeUpdate() == 1;
+        } catch (SQLException exception) {
+            throw databaseException(
+                    "Lỗi khi cập nhật trạng thái người dùng",
+                    exception
+            );
+        } finally {
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 
     @Override
     public boolean deleteById(long id) {
         String sql = "DELETE FROM users WHERE id = ?";
+        Connection connection = DataSourceUtils.getConnection(dataSource);
 
-        try (
-                Connection connection = dataSource.getConnection();
-                PreparedStatement statement = connection.prepareStatement(sql)
-        ) {
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
             statement.setLong(1, id);
             return statement.executeUpdate() == 1;
         } catch (SQLException exception) {
             throw databaseException("Lỗi khi xóa người dùng", exception);
+        } finally {
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 
@@ -200,10 +231,9 @@ public class JdbcUserDao implements UserDao {
                 )
                 """;
 
-        try (
-                Connection connection = dataSource.getConnection();
-                PreparedStatement statement = connection.prepareStatement(sql)
-        ) {
+        Connection connection = DataSourceUtils.getConnection(dataSource);
+
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
             statement.setString(1, email);
 
             try (ResultSet resultSet = statement.executeQuery()) {
@@ -215,6 +245,38 @@ public class JdbcUserDao implements UserDao {
                     "Lỗi khi kiểm tra email người dùng",
                     exception
             );
+        } finally {
+            DataSourceUtils.releaseConnection(connection, dataSource);
+        }
+    }
+
+    @Override
+    public long countActiveUsersByRoleCode(String roleCode) {
+        String sql = """
+                SELECT COUNT(*)
+                FROM users u
+                INNER JOIN user_roles ur ON ur.user_id = u.id
+                INNER JOIN roles r ON r.id = ur.role_id
+                WHERE u.status = 'ACTIVE'
+                  AND r.code = ?
+                """;
+
+        Connection connection = DataSourceUtils.getConnection(dataSource);
+
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setString(1, roleCode);
+
+            try (ResultSet resultSet = statement.executeQuery()) {
+                resultSet.next();
+                return resultSet.getLong(1);
+            }
+        } catch (SQLException exception) {
+            throw databaseException(
+                    "Lỗi khi đếm người dùng theo quyền",
+                    exception
+            );
+        } finally {
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 

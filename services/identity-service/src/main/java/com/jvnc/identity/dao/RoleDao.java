@@ -7,9 +7,13 @@ import java.util.Optional;
 
 public interface RoleDao {
 
+    List<Role> findAll();
+
     Optional<Role> findByCode(String code);
 
     List<Role> findByUserId(long userId);
 
     void assignRoleToUser(long userId, long roleId);
+
+    void deleteRolesByUserId(long userId);
 }
