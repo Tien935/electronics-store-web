@@ -140,9 +140,7 @@ export default function LoginPage() {
       } else if (email.trim().toLowerCase() === demoCustomerEmail && password === demoCustomerPassword) {
         startDemoCustomerSession();
       } else {
-        setAlertMsg(
-          `Không thể kết nối máy chủ. Tài khoản demo: Khách hàng ${demoCustomerEmail} / ${demoCustomerPassword}; Admin ${demoAdminEmail} / ${demoAdminPassword}; Nhân viên ${demoStaffEmail} / ${demoStaffPassword}.`
-        );
+        setAlertMsg('Không thể kết nối máy chủ. Vui lòng kiểm tra kết nối và thử lại.');
       }
     } finally {
       setIsSubmitting(false);
@@ -174,9 +172,6 @@ export default function LoginPage() {
             </div>
           )}
 
-          <div className="alert alert-info small" role="note">
-            Demo khi chưa chạy backend:<br />Khách hàng: <strong>customer@techmart.vn</strong> / <strong>Customer123!</strong><br />Admin: <strong>admin@techmart.vn</strong> / <strong>Admin123!</strong><br />Nhân viên: <strong>staff@techmart.vn</strong> / <strong>Staff123!</strong>
-          </div>
           <form noValidate className={validated ? 'was-validated' : ''} onSubmit={handleLogin}>
             <div className="mb-3">
               <label className="form-label fw-semibold small text-muted">Email đăng nhập</label>
