@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useMemo } from 'react';
 import { DEMO_ORDERS, DEMO_ORDER_ITEMS, DEMO_ORDER_STATUS_HISTORY, DEMO_VOUCHERS, ORDER_STATUS_LABELS, ORDER_STATUS_BADGES, PAYMENT_METHOD_LABELS, PAYMENT_STATUS_LABELS, formatOrderDate, loadDemoOrderData, saveDemoOrderData } from '../lib/demo-orders';
+import BrandLogo from '../../components/BrandLogo';
 export default function AdminDashboard() {
   const router = useRouter();
   const [currentUser, setCurrentUser] = useState(null);
@@ -1011,30 +1012,9 @@ export default function AdminDashboard() {
       >
         {/* Sidebar Header / Brand */}
         <div className="p-3 border-bottom d-flex align-items-center justify-content-between">
-          <Link href="/" className="d-flex align-items-center gap-2 overflow-hidden text-decoration-none">
-            <div
-              className="rounded-3 d-flex align-items-center justify-content-center text-white fw-bold shadow-sm"
-              style={{
-                width: '38px',
-                height: '38px',
-                backgroundColor: '#d70018',
-                borderRadius: '10px',
-                flexShrink: 0,
-              }}
-            >
-              <i className="bi bi-phone-fill fs-5 text-white"></i>
-            </div>
-            {sidebarOpen && (
-              <div className="text-truncate" style={{ lineHeight: '1.1' }}>
-                <span className="fw-black text-dark d-block" style={{ fontWeight: '900', letterSpacing: '-0.5px', fontSize: '18px' }}>
-                  Tech<b className="text-warning">Mart</b>
-                </span>
-                <span className="badge bg-danger-subtle text-danger px-1 py-0" style={{ fontSize: '10px' }}>
-                  {isAdmin ? 'ADMIN' : 'NHÂN VIÊN'}
-                </span>
-              </div>
-            )}
-          </Link>
+          <div className="d-flex align-items-center gap-2 overflow-hidden">
+            <BrandLogo tone="dark" showText={sidebarOpen} />
+          </div>
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
             className="btn btn-link text-muted p-0 text-decoration-none"
@@ -1434,7 +1414,7 @@ export default function AdminDashboard() {
                       value={categoryFilter}
                       onChange={(e) => setCategoryFilter(e.target.value)}
                     >
-                      <option value="ALL">Tất cả danh mục (category_id)</option>
+                      <option value="ALL">Tất cả danh mục</option>
                       {categories.map((c) => (
                         <option key={c.id} value={String(c.id)}>
                           #{c.id} - {c.name}
@@ -1449,7 +1429,7 @@ export default function AdminDashboard() {
                       value={brandFilter}
                       onChange={(e) => setBrandFilter(e.target.value)}
                     >
-                      <option value="ALL">Tất cả hãng (brand_id)</option>
+                      <option value="ALL">Tất cả hãng</option>
                       {brands.map((b) => (
                         <option key={b.id} value={String(b.id)}>
                           #{b.id} - {b.name}

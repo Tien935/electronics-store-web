@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import BrandLogo from './BrandLogo';
 
 export default function StoreFooter() {
   return (
@@ -6,15 +7,7 @@ export default function StoreFooter() {
           <div className="wrap">
             <div className="row g-4">
               <div className="col-lg-4">
-                <Link className="brand text-decoration-none mb-3" href="/" aria-label="TECH-MART home">
-  <span className="brand-mark bg-white text-danger" aria-hidden="true" style={{ borderRadius: '10px' }}>
-    <i className="bi bi-phone-flip fs-3 text-danger"></i>
-  </span>
-  <span>
-    <span className="brand-word text-white">TECH<b className="text-warning">MART</b></span>
-    <span className="brand-sub text-white-50">Hệ Thống Thiết Bị Di Động</span>
-  </span>
-</Link>
+                <BrandLogo tone="light" className="mb-3" />
 
                 <p className="text-secondary small">
                   Chuỗi bán lẻ thiết bị di động, điện thoại thông minh,

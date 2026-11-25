@@ -1,7 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useMemo, useState } from 'react';
+import { Suspense, useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { addToCart, readCart } from '../lib/cart';
 import StoreHeader from '../../components/StoreHeader';
 import StoreFooter from '../../components/StoreFooter';
@@ -40,7 +41,8 @@ const priceRanges = [
   { value: 'over30', label: 'Trên 30 triệu', test: (price) => price > 30000000 },
 ];
 
-export default function ProductsPage() {
+function ProductsContent() {
+  const searchParams = useSearchParams();
   const [query, setQuery] = useState('');
   const [categoryId, setCategoryId] = useState('all');
   const [brandId, setBrandId] = useState('all');
@@ -52,13 +54,12 @@ export default function ProductsPage() {
   const [notice, setNotice] = useState('');
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const requestedCategory = params.get('category');
-    const requestedQuery = params.get('q');
-    if (requestedQuery) setQuery(requestedQuery);
+    const requestedCategory = searchParams.get('category');
+    const requestedQuery = searchParams.get('q');
     const match = categories.find((item) => item.name === requestedCategory || item.slug === requestedCategory);
-    if (match) setCategoryId(String(match.id));
-  }, []);
+    setCategoryId(match ? String(match.id) : 'all');
+    setQuery(requestedQuery || '');
+  }, [searchParams]);
   useEffect(() => {
     const update = () => setCartCount(readCart().reduce((sum, item) => sum + item.quantity, 0));
     update();
@@ -103,10 +104,15 @@ export default function ProductsPage() {
 
       <div className="container py-4 py-lg-5">
         <div className="d-flex align-items-center gap-2 small text-muted mb-3"><Link href="/" className="text-decoration-none text-muted">Trang chủ</Link><span>/</span><span className="text-dark">{categories.find((item) => String(item.id) === categoryId)?.name || 'Sản phẩm'}</span></div>
-        <section className="bg-white rounded-4 p-4 p-lg-5 mb-4 shadow-sm">
-          <span className="text-danger fw-bold">TECHMART · DANH MỤC SẢN PHẨM</span>
-          <h1 className="fw-bold mt-2 mb-2">{categories.find((item) => String(item.id) === categoryId)?.name || 'Danh sách sản phẩm'}</h1>
-          <p className="text-secondary mb-0">Tìm kiếm và lọc theo thông tin sản phẩm đang được quản lý trong cửa hàng.</p>
+        <section className="category-banner-image mb-4" aria-label="Banner danh mục sản phẩm">
+          <img
+            src="https://cellphones.com.vn/sforum/wp-content/uploads/2022/06/xa-kho-gia-soc-2.jpg"
+            alt="Banner danh mục sản phẩm"
+            onError={(event) => {
+              event.currentTarget.onerror = null;
+              event.currentTarget.src = '/images/iphone-16-pro-max-banner.jpg';
+            }}
+          />
         </section>
 
         <section className="mb-4" aria-label="Danh mục sản phẩm">
@@ -147,6 +153,14 @@ export default function ProductsPage() {
       <StoreFooter />
       {notice && <div className="position-fixed bottom-0 end-0 m-4 alert alert-success shadow rounded-3" role="status" style={{ zIndex: 1100 }}>{notice}</div>}
     </main>
+  );
+}
+
+export default function ProductsPage() {
+  return (
+    <Suspense fallback={<main className="min-vh-100 d-flex align-items-center justify-content-center text-muted">Đang tải danh sách sản phẩm...</main>}>
+      <ProductsContent />
+    </Suspense>
   );
 }
 

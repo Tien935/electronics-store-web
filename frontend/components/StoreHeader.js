@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { readCart } from '../app/lib/cart';
+import BrandLogo from './BrandLogo';
 
 export default function StoreHeader({ searchValue, onSearchChange, searchPlaceholder = 'Bạn cần tìm điện thoại, laptop, phụ kiện gì...' }) {
   const router = useRouter();
@@ -51,7 +52,7 @@ export default function StoreHeader({ searchValue, onSearchChange, searchPlaceho
       <div className="tb-right d-flex align-items-center gap-3"><span className="small text-white"><i className="bi bi-truck me-1 text-warning" />Giao hàng 2 Giờ</span><span className="small text-white"><i className="bi bi-shield-check me-1 text-warning" />Bảo hành chính hãng 12 tháng</span><span className="small text-white"><i className="bi bi-arrow-repeat me-1 text-warning" />Đổi mới trong 30 ngày</span></div>
     </div></div>
     <header className="site-header"><div className="wrap"><div className="header-main">
-      <Link className="brand text-decoration-none" href="/" aria-label="TECH-MART home"><span className="brand-mark bg-white text-danger" aria-hidden="true" style={{ borderRadius: '10px' }}><i className="bi bi-phone-flip fs-3 text-danger" /></span><span><span className="brand-word text-white">TECH<b className="text-warning">MART</b></span><span className="brand-sub text-white-50">Hệ Thống Thiết Bị Di Động</span></span></Link>
+      <BrandLogo tone="light" />
       <form className="searchbar" role="search" onSubmit={handleSearch}><label className="visually-hidden" htmlFor="store-search">Tìm kiếm sản phẩm</label><input id="store-search" type="search" placeholder={searchPlaceholder} autoComplete="off" value={searchText} onChange={(event) => onSearchChange ? onSearchChange(event.target.value) : setLocalSearch(event.target.value)} /><button className="search-btn text-danger" type="submit" aria-label="Tìm kiếm"><i className="bi bi-search fs-5" /></button></form>
       <div className="header-actions d-flex align-items-center flex-nowrap" style={{ flexShrink: 0 }}>
         {!currentUser ? <div className="d-flex align-items-center gap-2"><Link href="/login" className="btn bg-white text-danger btn-sm fw-bold px-3 py-2 shadow-sm rounded-pill d-flex align-items-center gap-1 text-nowrap"><i className="bi bi-box-arrow-in-right fs-6" /><span>Đăng nhập</span></Link><Link href="/register" className="btn btn-outline-light btn-sm fw-bold px-3 py-2 shadow-sm rounded-pill d-flex align-items-center gap-1 text-nowrap"><i className="bi bi-person-plus fs-6" /><span>Đăng ký</span></Link></div> : <div className="d-flex align-items-center gap-2">
@@ -63,7 +64,7 @@ export default function StoreHeader({ searchValue, onSearchChange, searchPlaceho
       </div>
     </div></div>
     <nav className="deptnav" aria-label="Danh mục thiết bị"><div className="wrap">
-      <Link className="dept-all" href="/products"><i className="bi bi-grid-fill me-2" />Tất cả sản phẩm</Link><Link className="dept-link hot" href="/#flash"><i className="bi bi-lightning-charge-fill me-1" />Hotsale Cuối Tuần</Link><Link className="dept-link" href="/products?category=dien-thoai">Điện thoại iPhone</Link><Link className="dept-link" href="/products?category=dien-thoai">Samsung Galaxy AI</Link><Link className="dept-link" href="/products?category=laptop">Laptop &amp; MacBook</Link><Link className="dept-link" href="/products?category=tablet">iPad &amp; Tablet</Link><Link className="dept-link" href="/products?category=smartwatch">Đồng hồ Smartwatch</Link><span className="dept-spacer" /><span className="dept-phone"><i className="bi bi-telephone-inbound me-1" />Mua hàng: 1800.6868 (Miễn phí)</span>
+      <Link className="dept-all" href="/products"><i className="bi bi-grid-fill me-2" />Tất cả sản phẩm</Link><Link className="dept-link hot" href="/#flash"><i className="bi bi-lightning-charge-fill me-1" />Hotsale Cuối Tuần</Link><Link className="dept-link" href="/products?category=dien-thoai">Điện thoại di động</Link><Link className="dept-link" href="/products?category=laptop">Laptop / Máy tính xách tay</Link><Link className="dept-link" href="/products?category=tablet">Máy tính bảng (Tablet)</Link><Link className="dept-link" href="/products?category=phu-kien">Phụ kiện &amp; Tai nghe</Link><Link className="dept-link" href="/products?category=smartwatch">Đồng hồ thông minh</Link><span className="dept-spacer" /><span className="dept-phone"><i className="bi bi-telephone-inbound me-1" />Mua hàng: 1800.6868 (Miễn phí)</span>
     </div></nav></header>
   </>;
 }

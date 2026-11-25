@@ -1,11 +1,35 @@
 
 'use client';
 
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import StoreHeader from '../components/StoreHeader';
 import StoreFooter from '../components/StoreFooter';
 
 export default function Home() {
+  const [secondsLeft, setSecondsLeft] = useState(6 * 60 * 60 + 42 * 60 + 15);
+
+  useEffect(() => {
+    const storageKey = 'techmart-flash-sale-ends-at';
+    const savedEndsAt = Number(window.localStorage.getItem(storageKey));
+    const endsAt = savedEndsAt > Date.now()
+      ? savedEndsAt
+      : Date.now() + (6 * 60 * 60 + 42 * 60 + 15) * 1000;
+    window.localStorage.setItem(storageKey, String(endsAt));
+    const updateCountdown = () => {
+      setSecondsLeft(Math.max(0, Math.ceil((endsAt - Date.now()) / 1000)));
+    };
+
+    updateCountdown();
+    const timer = window.setInterval(updateCountdown, 1000);
+
+    return () => window.clearInterval(timer);
+  }, []);
+
+  const countdownHours = String(Math.floor(secondsLeft / 3600)).padStart(2, '0');
+  const countdownMinutes = String(Math.floor((secondsLeft % 3600) / 60)).padStart(2, '0');
+  const countdownSeconds = String(secondsLeft % 60).padStart(2, '0');
+
   return (
       <>
         <a className="skip-link" href="#main">
@@ -137,7 +161,7 @@ export default function Home() {
                 <span className="cat-ic">
                   <i className="bi bi-phone fs-3 text-primary"></i>
                 </span>
-                  <span className="cat-name">Điện thoại</span>
+                  <span className="cat-name">Điện thoại di động</span>
                   <span className="cat-count">3 mẫu</span>
                 </Link>
 
@@ -145,7 +169,7 @@ export default function Home() {
                 <span className="cat-ic">
                   <i className="bi bi-laptop fs-3 text-success"></i>
                 </span>
-                  <span className="cat-name">Laptop</span>
+                  <span className="cat-name">Laptop / Máy tính xách tay</span>
                   <span className="cat-count">2 mẫu</span>
                 </Link>
 
@@ -153,7 +177,7 @@ export default function Home() {
                 <span className="cat-ic">
                   <i className="bi bi-tablet fs-3 text-info"></i>
                 </span>
-                  <span className="cat-name">iPad / Tablet</span>
+                  <span className="cat-name">Máy tính bảng (Tablet)</span>
                   <span className="cat-count">1 mẫu</span>
                 </Link>
 
@@ -161,7 +185,7 @@ export default function Home() {
                 <span className="cat-ic">
                   <i className="bi bi-headphones fs-3 text-warning"></i>
                 </span>
-                  <span className="cat-name">Tai nghe & Âm thanh</span>
+                  <span className="cat-name">Phụ kiện & Tai nghe</span>
                   <span className="cat-count">3 mẫu</span>
                 </Link>
 
@@ -173,13 +197,6 @@ export default function Home() {
                   <span className="cat-count">2 mẫu</span>
                 </Link>
 
-                <Link className="cat-tile" href="/products?category=phu-kien">
-                <span className="cat-ic">
-                  <i className="bi bi-battery-charging fs-3 text-secondary"></i>
-                </span>
-                  <span className="cat-name">Phụ kiện & Cáp sạc</span>
-                  <span className="cat-count">3 mẫu</span>
-                </Link>
               </div>
             </div>
           </section>
@@ -207,21 +224,21 @@ export default function Home() {
                     <span className="cd-label">Kết thúc sau</span>
                     <div className="cd-units">
                     <span className="cd-box">
-                      <b>06</b><span>giờ</span>
+                      <b>{countdownHours}</b><span>giờ</span>
                     </span>
                       <span className="cd-colon">:</span>
                       <span className="cd-box">
-                      <b>42</b><span>phút</span>
+                      <b>{countdownMinutes}</b><span>phút</span>
                     </span>
                       <span className="cd-colon">:</span>
                       <span className="cd-box">
-                      <b>15</b><span>giây</span>
+                      <b>{countdownSeconds}</b><span>giây</span>
                     </span>
                     </div>
                   </div>
                 </div>
 
-                <div className="flash-grid">
+                <div className="flash-grid flash-track">
                   <article className="flash-item">
                     <div className="fi-frame">
                       <img
@@ -322,6 +339,48 @@ export default function Home() {
                       <span className="stock-lbl">
                       Đã bán 32 sản phẩm
                     </span>
+                    </div>
+                  </article>
+
+                  <article className="flash-item">
+                    <div className="fi-frame">
+                      <img src="https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=600&h=600&fit=crop" alt="MacBook Air M3" />
+                      <span className="tag tag-red disc">-15%</span>
+                    </div>
+                    <div className="fi-body">
+                      <span className="fi-cat">Laptop mỏng nhẹ</span>
+                      <h4>MacBook Air M3 13 inch 16GB/512GB</h4>
+                      <div className="fi-price"><span className="cur">27.490.000₫</span><s className="old">32.490.000₫</s></div>
+                      <div className="stock-meter"><div className="bar" style={{ width: '55%' }} /></div>
+                      <span className="stock-lbl">Còn 8 sản phẩm</span>
+                    </div>
+                  </article>
+
+                  <article className="flash-item">
+                    <div className="fi-frame">
+                      <img src="https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?w=600&h=600&fit=crop" alt="iPad Pro M4" />
+                      <span className="tag tag-red disc">-12%</span>
+                    </div>
+                    <div className="fi-body">
+                      <span className="fi-cat">Máy tính bảng</span>
+                      <h4>iPad Pro M4 11 inch Wi-Fi 256GB</h4>
+                      <div className="fi-price"><span className="cur">25.490.000₫</span><s className="old">28.990.000₫</s></div>
+                      <div className="stock-meter"><div className="bar" style={{ width: '48%' }} /></div>
+                      <span className="stock-lbl">Còn 6 sản phẩm</span>
+                    </div>
+                  </article>
+
+                  <article className="flash-item">
+                    <div className="fi-frame">
+                      <img src="https://images.unsplash.com/photo-1546868871-7041f2a55e12?w=600&h=600&fit=crop" alt="Apple Watch Series 10" />
+                      <span className="tag tag-red disc">-20%</span>
+                    </div>
+                    <div className="fi-body">
+                      <span className="fi-cat">Đồng hồ thông minh</span>
+                      <h4>Apple Watch Series 10 GPS 42mm</h4>
+                      <div className="fi-price"><span className="cur">8.790.000₫</span><s className="old">10.990.000₫</s></div>
+                      <div className="stock-meter"><div className="bar" style={{ width: '35%' }} /></div>
+                      <span className="stock-lbl">Còn 5 sản phẩm</span>
                     </div>
                   </article>
                 </div>

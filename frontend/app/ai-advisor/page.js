@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
+import BrandLogo from "../../components/BrandLogo";
 import { getQuestions, recommend, sendFeedback } from "@/lib/advisor-api";
 import { useChat } from "@/hooks/useChat";
 import styles from "./page.module.css";
@@ -118,9 +118,7 @@ export default function AiAdvisorPage() {
       <div className={styles.container}>
         {/* Navigation top */}
         <header className={styles.topNav}>
-          <Link href="/" className={styles.backHomeBtn}>
-            <i className="bi bi-arrow-left me-1"></i> Quay lại Cửa hàng TECH-MART
-          </Link>
+          <BrandLogo tone="dark" />
           <div className={styles.badgeGenAI}>
             <span className={styles.sparkleIcon}><i className="bi bi-stars"></i></span>
             <span>GenAI RAG Advisor 2026</span>
