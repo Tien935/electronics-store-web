@@ -3,11 +3,73 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { addToCart, isUserLoggedIn } from './lib/cart';
 import StoreHeader from '../components/StoreHeader';
 import StoreFooter from '../components/StoreFooter';
+import ProductCard from '../components/ProductCard';
+
+const FEATURED_PRODUCTS = [
+  {
+    id: 1,
+    sku: 'IP16PM-256-TN',
+    name: 'iPhone 16 Pro Max 256GB',
+    description: 'Chip Apple A18 Pro, màn hình Super Retina XDR 6,9 inch và hệ thống camera 48MP.',
+    price: 34990000,
+    image_url: 'https://images.unsplash.com/photo-1695048133142-1a20484d2569?w=600&h=600&fit=crop',
+    category_name: 'Điện thoại di động',
+    brand_name: 'Apple',
+    status: 'ACTIVE',
+  },
+  {
+    id: 2,
+    sku: 'SS-S24U-512-TI',
+    name: 'Samsung Galaxy S24 Ultra 512GB',
+    description: 'Khung viền Titan, bút S Pen tích hợp và các tính năng Galaxy AI.',
+    price: 29990000,
+    image_url: 'https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?w=600&h=600&fit=crop',
+    category_name: 'Điện thoại di động',
+    brand_name: 'Samsung',
+    status: 'ACTIVE',
+  },
+  {
+    id: 3,
+    sku: 'MBA-M3-15-16GB',
+    name: 'MacBook Air M3 15 inch 16GB/512GB',
+    description: 'Laptop Apple M3 với màn hình Liquid Retina 15,3 inch.',
+    price: 32490000,
+    image_url: 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=600&h=600&fit=crop',
+    category_name: 'Laptop / Máy tính xách tay',
+    brand_name: 'Apple',
+    status: 'ACTIVE',
+  },
+  {
+    id: 4,
+    sku: 'IPP-M4-11-256',
+    name: 'iPad Pro M4 11 inch Wi-Fi 256GB',
+    description: 'Chip M4 và màn hình Ultra Retina XDR Tandem OLED.',
+    price: 28990000,
+    image_url: 'https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?w=600&h=600&fit=crop',
+    category_name: 'Máy tính bảng (Tablet)',
+    brand_name: 'Apple',
+    status: 'ACTIVE',
+  },
+];
 
 export default function Home() {
+  const router = useRouter();
   const [secondsLeft, setSecondsLeft] = useState(6 * 60 * 60 + 42 * 60 + 15);
+  const [notice, setNotice] = useState('');
+
+  const addProductToCart = (product) => {
+    if (!isUserLoggedIn()) {
+      router.push('/login');
+      return;
+    }
+    addToCart(product, '');
+    setNotice(`Đã thêm ${product.name} vào giỏ hàng`);
+    window.setTimeout(() => setNotice(''), 2200);
+  };
 
   useEffect(() => {
     const storageKey = 'techmart-flash-sale-ends-at';
@@ -411,168 +473,16 @@ export default function Home() {
               </span>
               </div>
 
-              <div className="row g-4">
-                {/* Product Card 1 */}
-                <div className="col-12 col-sm-6 col-md-4 col-lg-3">
-                  <div className="card h-100 shadow-sm border-0 position-relative p-3">
-                  <span className="badge bg-danger position-absolute top-0 start-0 m-3">
-                    Trả góp 0%
-                  </span>
-
-                    <Link href="/product" className="text-decoration-none">
-                      <img
-                          src="https://images.unsplash.com/photo-1695048133142-1a20484d2569?w=600&h=600&fit=crop"
-                          className="card-img-top p-2"
-                          alt="iPhone 16 Pro Max"
-                      />
-                    </Link>
-
-                    <div className="card-body d-flex flex-column px-0">
-                      <span className="text-muted small">Apple</span>
-
-                      <Link
-                          href="/product"
-                          className="text-decoration-none text-dark"
-                      >
-                        <h6 className="card-title fw-bold hover-title">
-                          iPhone 16 Pro Max 256GB
-                        </h6>
-                      </Link>
-
-                      <p className="text-secondary small mb-2">
-                        Chip A18 Pro · Nút Camera Control · Màn hình 6.9 inch
-                      </p>
-
-                      <div className="mt-auto">
-                        <p className="text-danger fw-bold fs-5 mb-2">
-                          34.990.000₫
-                        </p>
-
-                        <Link
-                            href="/product"
-                            className="btn btn-outline-primary btn-sm w-100 fw-bold"
-                        >
-                          <i className="bi bi-eye me-1"></i>
-                          Xem Chi Tiết
-                        </Link>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Product Card 2 */}
-                <div className="col-12 col-sm-6 col-md-4 col-lg-3">
-                  <div className="card h-100 shadow-sm border-0 position-relative p-3">
-                  <span className="badge bg-info text-dark position-absolute top-0 start-0 m-3">
-                    Galaxy AI
-                  </span>
-
-                    <img
-                        src="https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?w=600&h=600&fit=crop"
-                        className="card-img-top p-2"
-                        alt="Samsung Galaxy S24"
-                    />
-
-                    <div className="card-body d-flex flex-column px-0">
-                      <span className="text-muted small">Samsung</span>
-
-                      <h6 className="card-title fw-bold">
-                        Samsung Galaxy S24 Ultra 512GB
-                      </h6>
-
-                      <p className="text-secondary small mb-2">
-                        Snapdragon 8 Gen 3 · Bút S-Pen · Khung viền Titan
-                      </p>
-
-                      <div className="mt-auto">
-                        <p className="text-danger fw-bold fs-5 mb-2">
-                          29.990.000₫
-                        </p>
-
-                        <button className="btn btn-outline-primary btn-sm w-100 fw-bold">
-                          <i className="bi bi-cart-plus me-1"></i>
-                          Thêm vào giỏ
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Product Card 3 */}
-                <div className="col-12 col-sm-6 col-md-4 col-lg-3">
-                  <div className="card h-100 shadow-sm border-0 position-relative p-3">
-                  <span className="badge bg-success position-absolute top-0 start-0 m-3">
-                    Bán chạy nhất
-                  </span>
-
-                    <img
-                        src="https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=600&h=600&fit=crop"
-                        className="card-img-top p-2"
-                        alt="MacBook Air M3"
-                    />
-
-                    <div className="card-body d-flex flex-column px-0">
-                      <span className="text-muted small">Apple</span>
-
-                      <h6 className="card-title fw-bold">
-                        MacBook Air M3 16GB / 256GB
-                      </h6>
-
-                      <p className="text-secondary small mb-2">
-                        Apple M3 8-core CPU · Màn hình Liquid Retina 13.6"
-                      </p>
-
-                      <div className="mt-auto">
-                        <p className="text-danger fw-bold fs-5 mb-2">
-                          27.490.000₫
-                        </p>
-
-                        <button className="btn btn-outline-primary btn-sm w-100 fw-bold">
-                          <i className="bi bi-cart-plus me-1"></i>
-                          Thêm vào giỏ
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Product Card 4 */}
-                <div className="col-12 col-sm-6 col-md-4 col-lg-3">
-                  <div className="card h-100 shadow-sm border-0 position-relative p-3">
-                  <span className="badge bg-warning text-dark position-absolute top-0 start-0 m-3">
-                    Mới ra mắt
-                  </span>
-
-                    <img
-                        src="https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?w=600&h=600&fit=crop"
-                        className="card-img-top p-2"
-                        alt="iPad Pro M4"
-                    />
-
-                    <div className="card-body d-flex flex-column px-0">
-                      <span className="text-muted small">Apple</span>
-
-                      <h6 className="card-title fw-bold">
-                        iPad Pro M4 11 inch Ultra Retina
-                      </h6>
-
-                      <p className="text-secondary small mb-2">
-                        Chip M4 thế hệ mới · Màn hình OLED Tandem siêu mỏng
-                      </p>
-
-                      <div className="mt-auto">
-                        <p className="text-danger fw-bold fs-5 mb-2">
-                          28.990.000₫
-                        </p>
-
-                        <button className="btn btn-outline-primary btn-sm w-100 fw-bold">
-                          <i className="bi bi-cart-plus me-1"></i>
-                          Thêm vào giỏ
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+              <div className="row g-3 g-lg-4">
+                {FEATURED_PRODUCTS.map((product) => (
+                  <ProductCard
+                    key={product.id}
+                    product={product}
+                    categoryName={product.category_name}
+                    brandName={product.brand_name}
+                    onAddToCart={addProductToCart}
+                  />
+                ))}
               </div>
             </div>
           </section>
@@ -580,6 +490,11 @@ export default function Home() {
 
         {/* ===== FOOTER ===== */}
         <StoreFooter />
+        {notice && (
+          <div className="position-fixed bottom-0 end-0 m-4 alert alert-success shadow rounded-3" role="status" style={{ zIndex: 1100 }}>
+            {notice}
+          </div>
+        )}
       </>
   );
 }

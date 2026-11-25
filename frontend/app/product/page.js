@@ -1,9 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useState, useMemo, Suspense } from 'react';
-import { addToCart } from '../lib/cart';
+import { addToCart, isUserLoggedIn } from '../lib/cart';
 import StoreHeader from '../../components/StoreHeader';
 import StoreFooter from '../../components/StoreFooter';
 
@@ -188,6 +188,7 @@ const DB_PRODUCTS = [
 
 
 function CellphoneSProductDetail() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const rawId = searchParams.get('id');
   const rawSku = searchParams.get('sku');
@@ -215,6 +216,10 @@ function CellphoneSProductDetail() {
   const [addedToast, setAddedToast] = useState(false);
 
   const handleAddToCart = () => {
+    if (!isUserLoggedIn()) {
+      router.push('/login');
+      return;
+    }
     addToCart(product, selectedColor);
     setAddedToast(true);
     setTimeout(() => setAddedToast(false), 3000);

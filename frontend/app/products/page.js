@@ -2,10 +2,11 @@
 
 import Link from 'next/link';
 import { Suspense, useEffect, useMemo, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
-import { addToCart, readCart } from '../lib/cart';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { addToCart, isUserLoggedIn, readCart } from '../lib/cart';
 import StoreHeader from '../../components/StoreHeader';
 import StoreFooter from '../../components/StoreFooter';
+import ProductCard from '../../components/ProductCard';
 
 // Dữ liệu demo chỉ dùng các cột products và tên danh mục/thương hiệu liên kết từ database.
 const categories = [
@@ -42,6 +43,7 @@ const priceRanges = [
 ];
 
 function ProductsContent() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const [query, setQuery] = useState('');
   const [categoryId, setCategoryId] = useState('all');
@@ -93,6 +95,10 @@ function ProductsContent() {
   }, [query, categoryId, brandId, status, priceRange, sort]);
 
   const addProductToCart = (product) => {
+    if (!isUserLoggedIn()) {
+      router.push('/login');
+      return;
+    }
     addToCart(product, '');
     setNotice(`Đã thêm ${product.name} vào giỏ hàng`);
     window.setTimeout(() => setNotice(''), 2200);
@@ -141,13 +147,7 @@ function ProductsContent() {
         {filteredProducts.length ? <div className="row g-3 g-lg-4">{filteredProducts.map((product) => {
           const category = categories.find((item) => item.id === product.category_id);
           const brand = brands.find((item) => item.id === product.brand_id);
-          return <div className="col-6 col-md-4 col-xl-3" key={product.id}><article className="card h-100 border-0 shadow-sm rounded-4 overflow-hidden">
-            <Link href={`/product?id=${product.id}`} className="position-relative bg-white p-3 d-block text-center"><img src={product.image_url} alt={product.name} className="w-100" style={{ height: 190, objectFit: 'contain' }} /></Link>
-            <div className="card-body d-flex flex-column"><div className="d-flex justify-content-between align-items-center gap-2 mb-2"><small className="text-muted">{product.sku}</small><span className={`badge ${product.status === 'ACTIVE' ? 'bg-success-subtle text-success' : 'bg-secondary-subtle text-secondary'}`}>{product.status === 'ACTIVE' ? 'Đang kinh doanh' : 'Ngừng kinh doanh'}</span></div>
-              <Link href={`/product?id=${product.id}`} className="text-decoration-none text-dark"><h3 className="h6 fw-bold lh-base">{product.name}</h3></Link><div className="small text-muted mb-2">{category?.name} · {brand?.name}</div><p className="small text-secondary">{product.description}</p>
-              <div className="mt-auto"><div className="fw-bold text-danger fs-5 mb-2">{formatPrice(product.price)}</div><div className="d-flex gap-2"><Link href={`/product?id=${product.id}`} className="btn btn-outline-secondary rounded-pill flex-grow-1">Chi tiết</Link><button type="button" className="btn btn-outline-danger rounded-pill" onClick={() => addProductToCart(product)} aria-label={`Thêm ${product.name} vào giỏ`}><i className="bi bi-cart-plus" /></button></div></div>
-            </div>
-          </article></div>;
+          return <ProductCard key={product.id} product={product} categoryName={category?.name} brandName={brand?.name} onAddToCart={addProductToCart} />;
         })}</div> : <div className="bg-white rounded-4 p-5 text-center text-muted">Không có sản phẩm phù hợp với bộ lọc.</div>}
       </div>
       <StoreFooter />

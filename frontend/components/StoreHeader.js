@@ -12,6 +12,7 @@ export default function StoreHeader({ searchValue, onSearchChange, searchPlaceho
   const [localSearch, setLocalSearch] = useState('');
   const searchText = searchValue ?? localSearch;
   const isAdmin = currentUser?.role === 'ADMIN' || currentUser?.roles?.includes('ADMIN');
+  const isStaff = !isAdmin && (currentUser?.role === 'STAFF' || currentUser?.roles?.includes('STAFF'));
 
   useEffect(() => {
     const syncUser = () => {
@@ -57,6 +58,7 @@ export default function StoreHeader({ searchValue, onSearchChange, searchPlaceho
       <div className="header-actions d-flex align-items-center flex-nowrap" style={{ flexShrink: 0 }}>
         {!currentUser ? <div className="d-flex align-items-center gap-2"><Link href="/login" className="btn bg-white text-danger btn-sm fw-bold px-3 py-2 shadow-sm rounded-pill d-flex align-items-center gap-1 text-nowrap"><i className="bi bi-box-arrow-in-right fs-6" /><span>Đăng nhập</span></Link><Link href="/register" className="btn btn-outline-light btn-sm fw-bold px-3 py-2 shadow-sm rounded-pill d-flex align-items-center gap-1 text-nowrap"><i className="bi bi-person-plus fs-6" /><span>Đăng ký</span></Link></div> : <div className="d-flex align-items-center gap-2">
           {isAdmin && <Link href="/admin" className="btn btn-outline-light btn-sm fw-bold px-3 py-2 text-nowrap"><i className="bi bi-speedometer2 me-1" />Về trang Admin</Link>}
+          {isStaff && <Link href="/staff/orders" className="btn btn-outline-light btn-sm fw-bold px-3 py-2 text-nowrap"><i className="bi bi-clipboard-check me-1" />Về trang Nhân viên</Link>}
           {isAdmin ? <div className="bg-white text-danger px-3 py-1 rounded-pill fw-bold small d-flex align-items-center gap-1 shadow-sm text-nowrap"><i className="bi bi-person-check-fill fs-5" /><span>Chào, Admin</span></div> : <Link href="/account" className="bg-white text-danger px-3 py-2 rounded-pill fw-bold small d-flex align-items-center gap-1 shadow-sm text-nowrap text-decoration-none"><i className="bi bi-person-check-fill fs-5" /><span>Chào, {currentUser.full_name || currentUser.fullName || currentUser.name || currentUser.email}</span></Link>}
           <button onClick={handleLogout} className="btn btn-outline-light btn-sm fw-bold rounded-pill px-3 py-2 text-nowrap" title="Đăng xuất khỏi tài khoản"><i className="bi bi-box-arrow-right me-1" />Đăng xuất</button>
         </div>}

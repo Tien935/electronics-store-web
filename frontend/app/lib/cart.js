@@ -1,5 +1,16 @@
 const CART_KEY = 'techmart-cart';
 
+export function isUserLoggedIn() {
+  if (typeof window === 'undefined') return false;
+  const raw = window.localStorage.getItem('currentUser') || window.localStorage.getItem('adminUser');
+  if (!raw) return false;
+  try {
+    return Boolean(JSON.parse(raw));
+  } catch {
+    return false;
+  }
+}
+
 export function readCart() {
   if (typeof window === 'undefined') return [];
   try {
