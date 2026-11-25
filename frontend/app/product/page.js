@@ -2,197 +2,125 @@
 
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { useState, useMemo, useEffect, Suspense } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { addToCart, readCart } from '../lib/cart';
 
-// ================= DỮ LIỆU SẢN PHẨM ĐỒNG BỘ 100% CSDL =================
-// Mỗi sản phẩm chỉ có đúng 1 giá duy nhất (cột price DECIMAL(15,2)) chuẩn theo Database
-const DB_PRODUCTS = [
-  {
-    id: 1,
-    sku: 'IP16PM-256-TN',
-    name: 'iPhone 16 Pro Max 256GB',
-    description: 'iPhone 16 Pro Max thiết kế Titan Cấp 5 bền bỉ và nhẹ nhất. Màn hình Super Retina XDR 6.9 inch với viền mỏng kỷ lục. Sức mạnh đột phá từ chip Apple A18 Pro 3nm cùng bộ xử lý thần kinh 16 lõi, hỗ trợ toàn diện hệ thống trí tuệ Apple Intelligence. Cụm 3 camera 48MP Fusion hỗ trợ nút điều khiển Camera Control độc quyền thế hệ mới.',
-    price: 34990000,
-    image_url: 'https://images.unsplash.com/photo-1695048133142-1a20484d2569?w=600&h=600&fit=crop',
-    category_id: 1,
-    brand_id: 1,
-    category_name: 'Điện thoại di động',
-    brand_name: 'Apple',
-    status: 'ACTIVE',
-    created_at: '2026-11-15 08:30:00',
-    updated_at: '2026-11-20 14:20:00',
-    colors: [
-      { name: 'Titan Sa Mạc', hex: '#d4af88' },
-      { name: 'Titan Tự Nhiên', hex: '#9f9e9a' },
-      { name: 'Titan Trắng', hex: '#e8e8e6' },
-      { name: 'Titan Đen', hex: '#343538' },
-    ],
-  },
-  {
-    id: 2,
-    sku: 'SS-S24U-512-TI',
-    name: 'Samsung Galaxy S24 Ultra 512GB',
-    description: 'Samsung Galaxy S24 Ultra trang bị khung viền Titan cao cấp và bút S-Pen tích hợp. Quyền năng Galaxy AI đỉnh cao với tính năng dịch thuật cuộc gọi trực tiếp, khoanh vùng tìm kiếm đa năng Circle to Search và trợ lý chỉnh sửa ảnh thông minh. Chip Snapdragon 8 Gen 3 for Galaxy cho hiệu năng đỉnh cao.',
-    price: 29990000,
-    image_url: 'https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?w=600&h=600&fit=crop',
-    category_id: 1,
-    brand_id: 2,
-    category_name: 'Điện thoại di động',
-    brand_name: 'Samsung',
-    status: 'ACTIVE',
-    created_at: '2026-11-15 09:00:00',
-    updated_at: '2026-11-20 15:00:00',
-    colors: [
-      { name: 'Xám Titan', hex: '#8a8d8f' },
-      { name: 'Đen Titan', hex: '#2b2c2d' },
-      { name: 'Tím Titan', hex: '#635b75' },
-      { name: 'Vàng Titan', hex: '#e8d8b8' },
-    ],
-  },
-  {
-    id: 3,
-    sku: 'MBA-M3-15-16GB',
-    name: 'MacBook Air M3 15 inch 16GB/512GB',
-    description: 'MacBook Air M3 15 inch trang bị chip Apple M3 thế hệ mới với CPU 8 lõi và GPU 10 lõi, màn hình Liquid Retina 15.3 inch hiển thị 1 tỷ màu. Thời lượng pin ấn tượng lên tới 18 giờ liên tục trong thân máy nhôm tái chế mỏng nhẹ chỉ 11.5mm.',
-    price: 32490000,
-    image_url: 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=600&h=600&fit=crop',
-    category_id: 2,
-    brand_id: 1,
-    category_name: 'Laptop / Máy tính xách tay',
-    brand_name: 'Apple',
-    status: 'ACTIVE',
-    created_at: '2026-11-15 09:30:00',
-    updated_at: '2026-11-20 15:30:00',
-    colors: [
-      { name: 'Midnight', hex: '#1e2430' },
-      { name: 'Starlight', hex: '#f0e5d8' },
-      { name: 'Space Gray', hex: '#7d7e80' },
-      { name: 'Silver', hex: '#e3e4e6' },
-    ],
-  },
-  {
-    id: 4,
-    sku: 'IPP-M4-11-256',
-    name: 'iPad Pro M4 11 inch Wi-Fi 256GB',
-    description: 'iPad Pro M4 sở hữu màn hình Ultra Retina XDR Tandem OLED tiên phong với độ sáng đỉnh cao 1600 nits. Chip Apple M4 thế hệ kế tiếp cho sức mạnh xử lý AI vượt trội. Thiết kế siêu mỏng chỉ 5.3mm và hỗ trợ bút Apple Pencil Pro mới.',
-    price: 28990000,
-    image_url: 'https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?w=600&h=600&fit=crop',
-    category_id: 3,
-    brand_id: 1,
-    category_name: 'Máy tính bảng (Tablet)',
-    brand_name: 'Apple',
-    status: 'ACTIVE',
-    created_at: '2026-11-16 08:00:00',
-    updated_at: '2026-11-20 16:00:00',
-    colors: [
-      { name: 'Đen Không Gian', hex: '#2e2e2e' },
-      { name: 'Bạc', hex: '#e5e5e5' },
-    ],
-  },
-  {
-    id: 5,
-    sku: 'APP2-USBC-WHITE',
-    name: 'Tai nghe Apple AirPods Pro 2 USB-C',
-    description: 'AirPods Pro 2 trang bị chip Apple H2 với khả năng chống ồn chủ động ANC gấp đôi thế hệ trước. Chế độ âm thanh thích ứng Adaptive Audio, chuẩn kháng bụi nước IP54 và hộp sạc MagSafe cổng Type-C.',
-    price: 5790000,
-    image_url: 'https://images.unsplash.com/photo-1600294037681-c80b4cb5b434?w=600&h=600&fit=crop',
-    category_id: 4,
-    brand_id: 1,
-    category_name: 'Phụ kiện & Tai nghe',
-    brand_name: 'Apple',
-    status: 'ACTIVE',
-    created_at: '2026-11-16 09:00:00',
-    updated_at: '2026-11-20 16:30:00',
-    colors: [{ name: 'Trắng', hex: '#ffffff' }],
-  },
-  {
-    id: 6,
-    sku: 'ASUS-ROG-G16-4070',
-    name: 'Laptop Gaming ASUS ROG Zephyrus G16',
-    description: 'ASUS ROG Zephyrus G16 là cỗ máy gaming cao cấp mỏng nhẹ. Trang bị vi xử lý Intel Core Ultra 9 185H và card đồ họa NVIDIA GeForce RTX 4070 8GB. Màn hình ROG Nebula OLED 2.5K tần số quét 240Hz thời gian phản hồi 0.2ms.',
-    price: 52990000,
-    image_url: 'https://images.unsplash.com/photo-1593642632823-8f785ba67e45?w=600&h=600&fit=crop',
-    category_id: 2,
-    brand_id: 3,
-    category_name: 'Laptop / Máy tính xách tay',
-    brand_name: 'ASUS',
-    status: 'ACTIVE',
-    created_at: '2026-11-17 08:00:00',
-    updated_at: '2026-11-21 10:00:00',
-    colors: [
-      { name: 'Xám Eclipse', hex: '#3d3d3d' },
-      { name: 'Trắng Platinum', hex: '#f0f0f0' },
-    ],
-  },
-  {
-    id: 7,
-    sku: 'XM-14U-512-LEICA',
-    name: 'Xiaomi 14 Ultra 5G 512GB Leica',
-    description: 'Xiaomi 14 Ultra hợp tác cùng Leica với hệ thống 4 camera quang học đỉnh cao, khẩu độ vô cấp f/1.63 - f/4.0 trên cảm biến Sony LYT-900 1 inch. Màn hình cong siêu mỏng WQHD+ 120Hz và chip Snapdragon 8 Gen 3 siêu mạnh.',
-    price: 26990000,
-    image_url: 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=600&h=600&fit=crop',
-    category_id: 1,
-    brand_id: 5,
-    category_name: 'Điện thoại di động',
-    brand_name: 'Xiaomi',
-    status: 'ACTIVE',
-    created_at: '2026-11-17 09:00:00',
-    updated_at: '2026-11-21 11:00:00',
-    colors: [
-      { name: 'Đen Da Thuần Chay', hex: '#1c1c1c' },
-      { name: 'Trắng Da Thuần Chay', hex: '#f5f5f5' },
-    ],
-  },
-  {
-    id: 8,
-    sku: 'SONY-WH1000XM5-BLK',
-    name: 'Tai nghe không dây Sony WH-1000XM5',
-    description: 'Sony WH-1000XM5 sở hữu công nghệ chống ồn hàng đầu với hai bộ xử lý V1 và HD QN1 cùng 8 micro thu âm. Hỗ trợ truyền tải âm thanh chuẩn Hi-Res Audio Wireless qua codec LDAC. Thời lượng pin 30 giờ và công nghệ đàm thoại AI.',
-    price: 7990000,
-    image_url: 'https://images.unsplash.com/photo-1546435770-a3e426bf472b?w=600&h=600&fit=crop',
-    category_id: 4,
-    brand_id: 4,
-    category_name: 'Phụ kiện & Tai nghe',
-    brand_name: 'Sony',
-    status: 'ACTIVE',
-    created_at: '2026-11-18 08:00:00',
-    updated_at: '2026-11-21 12:00:00',
-    colors: [
-      { name: 'Đen Nhám', hex: '#262626' },
-      { name: 'Bạc Khói', hex: '#cfcfcf' },
-    ],
-  },
-];
+const API_BASE_URL =
+    process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080';
+
+const mapProductFromApi = (product) => ({
+  ...product,
+  image_url: product.imageUrl,
+  category_id: product.categoryId,
+  category_name: product.categoryName,
+  brand_id: product.brandId,
+  brand_name: product.brandName,
+  created_at: product.createdAt,
+  updated_at: product.updatedAt,
+});
 
 function CellphoneSProductDetail() {
   const searchParams = useSearchParams();
   const rawId = searchParams.get('id');
-  const rawSku = searchParams.get('sku');
 
-  // Lấy sản phẩm dựa vào id hoặc sku theo CSDL
-  const product = useMemo(() => {
-    if (rawId) {
-      const found = DB_PRODUCTS.find((p) => p.id === Number(rawId));
-      if (found) return found;
-    }
-    if (rawSku) {
-      const found = DB_PRODUCTS.find((p) => p.sku.toLowerCase() === rawSku.toLowerCase());
-      if (found) return found;
-    }
-    return DB_PRODUCTS[0];
-  }, [rawId, rawSku]);
+// Sản phẩm lấy từ Catalog API
+  const [product, setProduct] = useState(null);
+  const [otherProducts, setOtherProducts] = useState([]);
+  const [isLoadingProduct, setIsLoadingProduct] = useState(true);
+  const [productError, setProductError] = useState('');
 
-  // Các sản phẩm khác
-  const otherProducts = useMemo(() => {
-    return DB_PRODUCTS.filter((p) => p.id !== product.id);
-  }, [product]);
+// Database hiện chưa quản lý biến thể màu sắc
+  const selectedColor = 'Tiêu chuẩn';
 
-  // State người dùng chọn
-  const [selectedColor, setSelectedColor] = useState(product.colors[0]?.name || 'Tiêu chuẩn');
+// Các state giao diện hiện có
   const [cartCount, setCartCount] = useState(0);
   const [addedToast, setAddedToast] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState('Hà Nội');
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    const loadProductDetail = async () => {
+      // URL không có id hoặc id không phải số
+      if (!rawId || Number.isNaN(Number(rawId))) {
+        setProductError('Mã sản phẩm không hợp lệ.');
+        setIsLoadingProduct(false);
+        return;
+      }
+
+      try {
+        setIsLoadingProduct(true);
+        setProductError('');
+
+        // Gọi đồng thời API chi tiết và danh sách sản phẩm ACTIVE
+        const [detailResponse, productsResponse] =
+            await Promise.all([
+              fetch(`${API_BASE_URL}/api/products/${rawId}`, {
+                signal: controller.signal,
+              }),
+              fetch(`${API_BASE_URL}/api/products`, {
+                signal: controller.signal,
+              }),
+            ]);
+
+        if (detailResponse.status === 404) {
+          throw new Error('Không tìm thấy sản phẩm.');
+        }
+
+        if (!detailResponse.ok) {
+          throw new Error(
+              'Không thể tải thông tin chi tiết sản phẩm.'
+          );
+        }
+
+        if (!productsResponse.ok) {
+          throw new Error(
+              'Không thể tải danh sách sản phẩm tương tự.'
+          );
+        }
+
+        const [detailData, productsData] =
+            await Promise.all([
+              detailResponse.json(),
+              productsResponse.json(),
+            ]);
+
+        const mappedProduct =
+            mapProductFromApi(detailData);
+
+        const mappedProducts =
+            productsData.map(mapProductFromApi);
+
+        setProduct(mappedProduct);
+
+        setOtherProducts(
+            mappedProducts.filter(
+                (item) => item.id !== mappedProduct.id
+            )
+        );
+      } catch (error) {
+        if (error.name !== 'AbortError') {
+          console.error(
+              'Lỗi tải chi tiết sản phẩm:',
+              error
+          );
+
+          setProductError(
+              error.message ||
+              'Đã xảy ra lỗi khi tải sản phẩm.'
+          );
+        }
+      } finally {
+        if (!controller.signal.aborted) {
+          setIsLoadingProduct(false);
+        }
+      }
+    };
+
+    loadProductDetail();
+
+    return () => controller.abort();
+  }, [rawId]);
 
   useEffect(() => {
     const updateCount = () => setCartCount(readCart().reduce((sum, item) => sum + item.quantity, 0));
@@ -210,6 +138,51 @@ function CellphoneSProductDetail() {
     setAddedToast(true);
     setTimeout(() => setAddedToast(false), 3000);
   };
+
+  if (isLoadingProduct) {
+    return (
+        <div className="min-vh-100 d-flex flex-column align-items-center justify-content-center bg-light">
+          <div
+              className="spinner-border text-danger"
+              role="status"
+          >
+        <span className="visually-hidden">
+          Đang tải...
+        </span>
+          </div>
+
+          <p className="text-muted mt-3 mb-0">
+            Đang tải thông tin sản phẩm...
+          </p>
+        </div>
+    );
+  }
+
+  if (productError || !product) {
+    return (
+        <div className="min-vh-100 d-flex align-items-center justify-content-center bg-light p-3">
+          <div
+              className="card border-0 shadow-sm p-4 text-center"
+              style={{ maxWidth: '480px', width: '100%' }}
+          >
+            <i className="bi bi-exclamation-circle text-danger fs-1"></i>
+
+            <h5 className="fw-bold mt-3">
+              Không thể hiển thị sản phẩm
+            </h5>
+
+            <p className="text-muted">
+              {productError || 'Sản phẩm không tồn tại.'}
+            </p>
+
+            <Link href="/" className="btn btn-danger">
+              <i className="bi bi-arrow-left me-2"></i>
+              Quay về trang chủ
+            </Link>
+          </div>
+        </div>
+    );
+  }
 
   return (
     <div style={{ backgroundColor: '#f4f6f8', minHeight: '100vh', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif', fontSize: '15px' }}>
@@ -472,50 +445,6 @@ function CellphoneSProductDetail() {
                     <span className="text-muted">| SKU: <span className="font-monospace text-dark">{product.sku}</span></span>
                   </div>
                 </div>
-
-                {/* 3. Chọn Màu Sắc (Áp dụng cùng 1 giá duy nhất) */}
-                {product.colors && product.colors.length > 0 && (
-                  <div className="mb-3">
-                    <div className="fw-bold small text-dark mb-2">
-                      Chọn màu sắc: <span className="text-danger fw-semibold">{selectedColor}</span>
-                    </div>
-                    <div className="d-flex gap-2 flex-wrap">
-                      {product.colors.map((c) => {
-                        const isSelected = selectedColor === c.name;
-                        return (
-                          <button
-                            key={c.name}
-                            type="button"
-                            onClick={() => setSelectedColor(c.name)}
-                            className="btn d-flex align-items-center gap-2 text-start position-relative"
-                            style={{
-                              border: isSelected ? '2px solid #d70018' : '1px solid #e0e0e0',
-                              backgroundColor: isSelected ? '#fff5f5' : '#fff',
-                              borderRadius: '8px',
-                              padding: '8px 14px',
-                            }}
-                          >
-                            <span
-                              className="rounded-circle border d-inline-block shadow-sm"
-                              style={{ width: '16px', height: '16px', backgroundColor: c.hex }}
-                            ></span>
-                            <span className="fw-semibold" style={{ color: isSelected ? '#d70018' : '#333', fontSize: '13px' }}>
-                              {c.name}
-                            </span>
-                            {isSelected && (
-                              <span
-                                className="position-absolute top-0 end-0 translate-middle-y me-1 badge rounded-circle bg-danger p-1"
-                                style={{ fontSize: '8px' }}
-                              >
-                                <i className="bi bi-check"></i>
-                              </span>
-                            )}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
 
                 {/* 4. Khối Khuyến Mại Hộp Quà Đặc Trưng CellphoneS */}
                 <div
