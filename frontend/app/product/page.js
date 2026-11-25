@@ -2,8 +2,10 @@
 
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { useState, useMemo, useEffect, Suspense } from 'react';
-import { addToCart, readCart } from '../lib/cart';
+import { useState, useMemo, Suspense } from 'react';
+import { addToCart } from '../lib/cart';
+import StoreHeader from '../../components/StoreHeader';
+import StoreFooter from '../../components/StoreFooter';
 
 // ================= DỮ LIỆU SẢN PHẨM ĐỒNG BỘ 100% CSDL =================
 // Mỗi sản phẩm chỉ có đúng 1 giá duy nhất (cột price DECIMAL(15,2)) chuẩn theo Database
@@ -163,6 +165,24 @@ const DB_PRODUCTS = [
       { name: 'Bạc Khói', hex: '#cfcfcf' },
     ],
   },
+  {
+    id: 9, sku: 'AW-S10-42-GPS', name: 'Apple Watch Series 10 GPS 42mm',
+    description: 'Apple Watch Series 10 với màn hình OLED rộng, thiết kế mỏng nhẹ và các tính năng theo dõi sức khỏe, luyện tập hằng ngày.',
+    price: 10990000, image_url: 'https://images.unsplash.com/photo-1546868871-7041f2a55e12?w=600&h=600&fit=crop', category_id: 5, brand_id: 1,
+    category_name: 'Đồng hồ thông minh', brand_name: 'Apple', status: 'ACTIVE', created_at: '2026-11-20 08:00:00', updated_at: '2026-11-21 08:00:00', colors: [{ name: 'Đen Jet', hex: '#202124' }, { name: 'Bạc', hex: '#d8dadd' }],
+  },
+  {
+    id: 10, sku: 'GALAXY-WATCH7-44', name: 'Samsung Galaxy Watch7 44mm',
+    description: 'Đồng hồ thông minh Samsung Galaxy Watch7 hỗ trợ theo dõi sức khỏe, GPS và kháng nước 5ATM.',
+    price: 7490000, image_url: 'https://images.unsplash.com/photo-1508685096489-7aacd43bd3b1?w=600&h=600&fit=crop', category_id: 5, brand_id: 2,
+    category_name: 'Đồng hồ thông minh', brand_name: 'Samsung', status: 'ACTIVE', created_at: '2026-11-20 09:00:00', updated_at: '2026-11-21 09:00:00', colors: [{ name: 'Bạc', hex: '#c9cbd0' }, { name: 'Xanh', hex: '#455a64' }],
+  },
+  {
+    id: 11, sku: 'SONY-SRS-XB23-BLK', name: 'Loa Bluetooth Sony SRS-XB23',
+    description: 'Loa Bluetooth Sony SRS-XB23 nhỏ gọn, âm thanh mạnh mẽ, chống nước IP67 và thời lượng pin đến 12 giờ.',
+    price: 2490000, image_url: 'https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?w=600&h=600&fit=crop', category_id: 4, brand_id: 4,
+    category_name: 'Phụ kiện & Tai nghe', brand_name: 'Sony', status: 'ACTIVE', created_at: '2026-11-20 10:00:00', updated_at: '2026-11-21 10:00:00', colors: [{ name: 'Đen', hex: '#222222' }, { name: 'Xanh', hex: '#1688c9' }],
+  },
 ];
 
 
@@ -192,20 +212,7 @@ function CellphoneSProductDetail() {
 
   // State người dùng chọn
   const [selectedColor, setSelectedColor] = useState(product.colors[0]?.name || 'Tiêu chuẩn');
-  const [cartCount, setCartCount] = useState(0);
   const [addedToast, setAddedToast] = useState(false);
-  const [selectedLocation, setSelectedLocation] = useState('Hà Nội');
-
-  useEffect(() => {
-    const updateCount = () => setCartCount(readCart().reduce((sum, item) => sum + item.quantity, 0));
-    updateCount();
-    window.addEventListener('cart-updated', updateCount);
-    window.addEventListener('storage', updateCount);
-    return () => {
-      window.removeEventListener('cart-updated', updateCount);
-      window.removeEventListener('storage', updateCount);
-    };
-  }, []);
 
   const handleAddToCart = () => {
     addToCart(product, selectedColor);
@@ -216,106 +223,7 @@ function CellphoneSProductDetail() {
   return (
     <div style={{ backgroundColor: '#f4f6f8', minHeight: '100vh', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif', fontSize: '15px' }}>
       
-      {/* ===== 1. TOPBAR ===== */}
-      <div style={{ backgroundColor: '#e0052b', color: '#fff', fontSize: '13px', padding: '4px 0' }}>
-        <div className="container d-flex justify-content-between align-items-center">
-          <div>
-            <i className="bi bi-geo-alt-fill text-warning me-1"></i>
-            Xem giá và tồn kho tại: <strong>{selectedLocation}</strong>
-          </div>
-          <div className="d-none d-md-flex gap-4">
-            <span><i className="bi bi-telephone-fill text-warning me-1"></i>Hotline: <strong>1800.2097</strong> (Miễn phí)</span>
-            <span><i className="bi bi-truck text-warning me-1"></i>Giao nhanh 2h</span>
-            <span><i className="bi bi-shield-check text-warning me-1"></i>Bảo hành chính hãng 12 tháng</span>
-          </div>
-        </div>
-      </div>
-
-      {/* ===== 2. HEADER CELLPHONES CHÍNH ===== */}
-      <header style={{ backgroundColor: '#d70018', padding: '12px 0', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
-        <div className="container">
-          <div className="d-flex align-items-center justify-content-between gap-3">
-            
-            {/* Logo TechMart */}
-            <Link href="/" className="text-decoration-none d-flex align-items-center gap-2">
-              <div
-                style={{
-                  backgroundColor: '#fff',
-                  color: '#d70018',
-                  borderRadius: '10px',
-                  width: '46px',
-                  height: '46px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontWeight: '900',
-                  fontSize: '24px',
-                  boxShadow: '0 2px 6px rgba(0,0,0,0.15)'
-                }}
-              >
-                <i className="bi bi-phone-fill"></i>
-              </div>
-              <div style={{ lineHeight: '1.1' }}>
-                <span className="fw-black text-white d-block" style={{ fontWeight: '900', letterSpacing: '-0.5px', fontSize: '22px' }}>
-                  Tech<b className="text-warning">Mart</b>
-                </span>
-              </div>
-            </Link>
-
-            {/* Thanh tìm kiếm */}
-            <div className="d-none d-md-block flex-grow-1 mx-3" style={{ maxWidth: '480px' }}>
-              <div className="position-relative">
-                <input
-                  type="text"
-                  className="form-control"
-                  placeholder="Bạn cần tìm điện thoại, laptop, phụ kiện gì?..."
-                  style={{
-                    borderRadius: '10px',
-                    padding: '9px 40px 9px 15px',
-                    fontSize: '13px',
-                    border: 'none',
-                    boxShadow: '0 1px 4px rgba(0,0,0,0.1)'
-                  }}
-                />
-                <button
-                  type="button"
-                  className="btn p-0 position-absolute top-50 end-0 translate-middle-y me-3 text-secondary border-0"
-                >
-                  <i className="bi bi-search fs-6"></i>
-                </button>
-              </div>
-            </div>
-
-            {/* Cụm chức năng bên phải */}
-            <div className="d-flex align-items-center gap-2">
-              <Link
-                href="/admin"
-                className="btn btn-sm text-white d-none d-lg-flex align-items-center gap-1 px-3 py-2 fw-semibold"
-                style={{ backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: '10px', fontSize: '13px' }}
-              >
-                <i className="bi bi-speedometer2 fs-6"></i>
-                <span>Trang Admin</span>
-              </Link>
-
-              {/* Giỏ Hàng CellphoneS */}
-              <Link
-                href="/cart"
-                className="btn btn-sm text-white d-flex align-items-center gap-2 px-3 py-2 fw-semibold position-relative"
-                style={{ backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: '10px', fontSize: '13px', border: 'none' }}
-              >
-                <i className="bi bi-cart3 fs-5"></i>
-                <div className="text-start d-none d-sm-block" style={{ lineHeight: '1.1' }}>
-                  <span style={{ fontSize: '11px', display: 'block', opacity: 0.85 }}>Giỏ hàng</span>
-                  <span style={{ fontSize: '12px', fontWeight: 'bold' }}>{cartCount} món</span>
-                </div>
-                <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-warning text-dark">
-                  {cartCount}
-                </span>
-              </Link>
-            </div>
-          </div>
-        </div>
-      </header>
+      <StoreHeader />
 
       {/* ===== 3. BREADCRUMB CELLPHONES ===== */}
       <div style={{ backgroundColor: '#fff', borderBottom: '1px solid #ebebeb', padding: '8px 0', fontSize: '13px' }}>
@@ -697,57 +605,7 @@ function CellphoneSProductDetail() {
       </main>
 
       {/* ===== 7. FOOTER CHUỖI CỬA HÀNG CELLPHONES ===== */}
-      <footer className="bg-white border-top mt-5 pt-4 pb-3" style={{ fontSize: '12px', color: '#666' }}>
-        <div className="container">
-          <div className="row g-4">
-            <div className="col-12 col-md-3">
-              <h6 className="fw-bold text-dark mb-2" style={{ fontSize: '13px' }}>TỔNG ĐÀI HỖ TRỢ (MIỄN PHÍ)</h6>
-              <ul className="list-unstyled mb-0 lh-lg">
-                <li>Gọi mua hàng: <strong className="text-danger">1800.2097</strong> (7h30 - 22h00)</li>
-                <li>Khiếu nại: <strong className="text-danger">1800.2063</strong> (8h00 - 21h30)</li>
-                <li>Bảo hành: <strong className="text-danger">1800.2064</strong> (8h00 - 21h00)</li>
-              </ul>
-            </div>
-
-            <div className="col-6 col-md-3">
-              <h6 className="fw-bold text-dark mb-2" style={{ fontSize: '13px' }}>THÔNG TIN VÀ CHÍNH SÁCH</h6>
-              <ul className="list-unstyled mb-0 lh-lg">
-                <li>Mua hàng và thanh toán online</li>
-                <li>Chính sách giao hàng</li>
-                <li>Tra cứu hóa đơn điện tử</li>
-                <li>Chính sách bảo hành chính hãng</li>
-              </ul>
-            </div>
-
-            <div className="col-6 col-md-3">
-              <h6 className="fw-bold text-dark mb-2" style={{ fontSize: '13px' }}>DỊCH VỤ VÀ TIỆN ÍCH</h6>
-              <ul className="list-unstyled mb-0 lh-lg">
-                <li>Khách hàng thành viên Smember</li>
-                <li>Trung tâm bảo hành ủy quyền CareS</li>
-                <li>Thu cũ đổi mới trợ giá cao</li>
-                <li>Hợp tác bán hàng doanh nghiệp</li>
-              </ul>
-            </div>
-
-            <div className="col-12 col-md-3">
-              <h6 className="fw-bold text-dark mb-2" style={{ fontSize: '13px' }}>KẾT NỐI VỚI TECHMART</h6>
-              <p className="mb-2">Hệ thống 150 cửa hàng trải dài trên toàn quốc luôn sẵn sàng phục vụ quý khách.</p>
-              <div className="d-flex gap-2">
-                <span className="badge bg-light text-dark border p-2">Visa</span>
-                <span className="badge bg-light text-dark border p-2">MasterCard</span>
-                <span className="badge bg-light text-dark border p-2">MoMo</span>
-                <span className="badge bg-light text-dark border p-2">VNPAY</span>
-              </div>
-            </div>
-          </div>
-
-          <hr className="my-3" />
-          <div className="d-flex justify-content-between align-items-center flex-wrap small text-muted">
-            <span>© 2026 TechMart - Hệ thống bán lẻ điện thoại, máy tính, thiết bị di động chính hãng.</span>
-            <span>Dữ liệu quản lý đồng bộ theo Database categories - brands - products.</span>
-          </div>
-        </div>
-      </footer>
+      <StoreFooter />
     </div>
   );
 }
@@ -759,4 +617,6 @@ export default function ProductDetailPage() {
     </Suspense>
   );
 }
+
+
 

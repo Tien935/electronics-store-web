@@ -2,60 +2,10 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
-import { readCart } from './lib/cart';
+import StoreHeader from '../components/StoreHeader';
+import StoreFooter from '../components/StoreFooter';
 
 export default function Home() {
-  const [currentUser, setCurrentUser] = useState(null);
-  const [cartCount, setCartCount] = useState(0);
-
-  // Cập nhật số lượng sản phẩm trong giỏ hàng
-  useEffect(() => {
-    const updateCount = () => {
-      setCartCount(
-          readCart().reduce((sum, item) => sum + item.quantity, 0)
-      );
-    };
-
-    updateCount();
-
-    window.addEventListener('cart-updated', updateCount);
-    window.addEventListener('storage', updateCount);
-
-    return () => {
-      window.removeEventListener('cart-updated', updateCount);
-      window.removeEventListener('storage', updateCount);
-    };
-  }, []);
-
-  // Đọc thông tin đăng nhập từ localStorage
-  useEffect(() => {
-    const savedUser = localStorage.getItem('currentUser');
-
-    if (savedUser) {
-      try {
-        const user = JSON.parse(savedUser);
-
-        // Nếu là tài khoản Admin cũ còn sót lại trong máy,
-        // xóa để trang chủ luôn là khách hàng
-        if (user.role === 'ADMIN') {
-          localStorage.removeItem('currentUser');
-          setCurrentUser(null);
-        } else {
-          setCurrentUser(user);
-        }
-      } catch (err) {
-        console.error(err);
-      }
-    }
-  }, []);
-
-  // Đăng xuất
-  const handleLogout = () => {
-    localStorage.removeItem('currentUser');
-    setCurrentUser(null);
-  };
-
   return (
       <>
         <a className="skip-link" href="#main">
@@ -63,205 +13,7 @@ export default function Home() {
         </a>
 
         {/* ===== TOP UTILITY BAR ===== */}
-        <div className="topbar">
-          <div className="wrap d-flex justify-content-between align-items-center">
-            <div className="tb-left">
-            <span>
-              <i className="bi bi-geo-alt-fill text-warning me-1"></i>
-              Hệ thống <strong>150 chi nhánh toàn quốc</strong> ·
-              Hotline: <strong>1800.2097</strong> (Miễn phí)
-            </span>
-            </div>
-
-            <div className="tb-right d-flex align-items-center gap-3">
-            <span className="small text-white">
-              <i className="bi bi-truck me-1 text-warning"></i>
-              Giao hàng 2 Giờ
-            </span>
-
-              <span className="small text-white">
-              <i className="bi bi-shield-check me-1 text-warning"></i>
-              Bảo hành chính hãng 12 tháng
-            </span>
-
-              <span className="small text-white">
-              <i className="bi bi-arrow-repeat me-1 text-warning"></i>
-              Đổi mới trong 30 ngày
-            </span>
-            </div>
-          </div>
-        </div>
-
-        {/* ===== HEADER ===== */}
-        <header className="site-header">
-          <div className="wrap">
-            <div className="header-main">
-              <Link
-                  className="brand text-decoration-none"
-                  href="/"
-                  aria-label="TECH-MART home"
-              >
-              <span
-                  className="brand-mark bg-white text-danger"
-                  aria-hidden="true"
-                  style={{ borderRadius: '10px' }}
-              >
-                <i className="bi bi-phone-flip fs-3 text-danger"></i>
-              </span>
-
-                <span>
-                <span className="brand-word text-white">
-                  TECH<b className="text-warning">MART</b>
-                </span>
-                <span className="brand-sub text-white-50">
-                  Hệ Thống Thiết Bị Di Động
-                </span>
-              </span>
-              </Link>
-
-              {/* Ô tìm kiếm */}
-              <form
-                  className="searchbar"
-                  role="search"
-                  onSubmit={(e) => e.preventDefault()}
-              >
-                <label className="visually-hidden" htmlFor="searchCat">
-                  Danh mục
-                </label>
-
-                <select
-                    className="cat-select"
-                    id="searchCat"
-                    defaultValue="all"
-                >
-                  <option value="all">Tất cả</option>
-                  <option value="phones">Điện thoại</option>
-                  <option value="tablets">Máy tính bảng</option>
-                  <option value="laptops">Laptop</option>
-                  <option value="accessories">Phụ kiện</option>
-                </select>
-
-                <label className="visually-hidden" htmlFor="searchInput">
-                  Tìm kiếm
-                </label>
-
-                <input
-                    id="searchInput"
-                    type="search"
-                    placeholder="Bạn cần tìm điện thoại, laptop, phụ kiện gì..."
-                    autoComplete="off"
-                />
-
-                <button
-                    className="search-btn text-danger"
-                    type="submit"
-                    aria-label="Tìm kiếm"
-                >
-                  <i className="bi bi-search fs-5"></i>
-                </button>
-              </form>
-
-              {/* KHU VỰC TÀI KHOẢN */}
-              <div
-                  className="header-actions d-flex align-items-center flex-nowrap"
-                  style={{ flexShrink: 0 }}
-              >
-                {!currentUser ? (
-                    // Chưa đăng nhập
-                    <div className="d-flex align-items-center gap-2">
-                      <Link
-                          href="/login"
-                          className="btn bg-white text-danger btn-sm fw-bold px-3 py-2 shadow-sm rounded-pill d-flex align-items-center gap-1 text-nowrap"
-                      >
-                        <i className="bi bi-box-arrow-in-right fs-6"></i>
-                        <span>Đăng nhập</span>
-                      </Link>
-
-                      <Link
-                          href="/register"
-                          className="btn btn-outline-light btn-sm fw-bold px-3 py-2 shadow-sm rounded-pill d-flex align-items-center gap-1 text-nowrap"
-                      >
-                        <i className="bi bi-person-plus fs-6"></i>
-                        <span>Đăng ký</span>
-                      </Link>
-                    </div>
-                ) : (
-                    // Đã đăng nhập
-                    <div className="d-flex align-items-center gap-2">
-                      <div className="bg-white text-danger px-3 py-1 rounded-pill fw-bold small d-flex align-items-center gap-1 shadow-sm text-nowrap">
-                        <i className="bi bi-person-check-fill fs-5"></i>
-                        <span>Chào, {currentUser.name}</span>
-                      </div>
-
-                      <button
-                          onClick={handleLogout}
-                          className="btn btn-outline-light btn-sm fw-bold rounded-pill px-3 py-2 text-nowrap"
-                          title="Đăng xuất khỏi tài khoản"
-                      >
-                        <i className="bi bi-box-arrow-right me-1"></i>
-                        Đăng xuất
-                      </button>
-                    </div>
-                )}
-
-                {/* Giỏ hàng */}
-                <Link
-                    href="/cart"
-                    className="hact cart ms-2 text-white text-decoration-none"
-                    aria-label="Giỏ hàng"
-                >
-                  <i className="bi bi-cart3 fs-4 text-white"></i>
-                  <span className="hact-txt text-white">Giỏ hàng</span>
-                  <span className="count bg-warning text-dark">
-                  {cartCount}
-                </span>
-                </Link>
-              </div>
-            </div>
-          </div>
-
-          {/* MENU ĐIỀU HƯỚNG */}
-          <nav className="deptnav" aria-label="Danh mục thiết bị">
-            <div className="wrap">
-              <a className="dept-all" href="#categories">
-                <i className="bi bi-grid-fill me-2"></i>
-                Tất cả danh mục
-              </a>
-
-              <a className="dept-link hot" href="#flash">
-                <i className="bi bi-lightning-charge-fill me-1"></i>
-                Hotsale Cuối Tuần
-              </a>
-
-              <a className="dept-link" href="#bestsellers">
-                Điện thoại iPhone
-              </a>
-
-              <a className="dept-link" href="#bestsellers">
-                Samsung Galaxy AI
-              </a>
-
-              <a className="dept-link" href="#bestsellers">
-                Laptop & MacBook
-              </a>
-
-              <a className="dept-link" href="#bestsellers">
-                iPad & Tablet
-              </a>
-
-              <a className="dept-link" href="#bestsellers">
-                Đồng hồ Smartwatch
-              </a>
-
-              <span className="dept-spacer"></span>
-
-              <span className="dept-phone">
-              <i className="bi bi-telephone-inbound me-1"></i>
-              Mua hàng: 1800.6868 (Miễn phí)
-            </span>
-            </div>
-          </nav>
-        </header>
+        <StoreHeader />
 
         <main id="main">
           {/* ===== HERO CAROUSEL ===== */}
@@ -272,8 +24,9 @@ export default function Home() {
                   <div className="deal-slide active">
                     <div className="deal-media">
                       <img
-                          src="/bazaar/img/hero-electronics.jpg"
-                          alt="Đại tiệc công nghệ di động"
+                        className="deal-main-image"
+                        src="/images/iphone-16-pro-max-banner.jpg"
+                        alt="iPhone 16 Pro Max"
                       />
                     </div>
 
@@ -282,7 +35,7 @@ export default function Home() {
                       Mùa Siêu Phẩm AI 2026
                     </span>
 
-                      <h2>iPhone 16 Pro Max & Galaxy S24 Ultra</h2>
+                      <h2>iPhone 16 Pro Max<br /></h2>
 
                       <p>
                         Sở hữu quyền năng AI thế hệ mới nhất với đặc quyền
@@ -307,14 +60,14 @@ export default function Home() {
                   <article className="promo-card">
                     <div className="promo-bg" aria-hidden="true">
                       <img
-                          src="/bazaar/img/p-phone.jpg"
-                          alt="Khuyến mãi thành viên"
+                          src="https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=800&h=600&fit=crop"
+                          alt="Laptop dùng cho học tập"
                       />
                     </div>
 
                     <div>
                     <span className="tag tag-gold">
-                      Đặc quyền Smember
+                      Đặc quyền member
                     </span>
                       <h3>Giảm thêm 5% cho học sinh - sinh viên</h3>
                       <p>
@@ -323,7 +76,7 @@ export default function Home() {
                       </p>
                     </div>
 
-                    <a className="promo-link" href="#flash">
+                    <a className="btn-bz btn-gold promo-action" href="#flash">
                       Đăng ký nhận mã
                       <i className="bi bi-arrow-right ms-1"></i>
                     </a>
@@ -332,13 +85,13 @@ export default function Home() {
                   <article className="promo-card alt">
                     <div className="promo-bg" aria-hidden="true">
                       <img
-                          src="/bazaar/img/p-vacuum.jpg"
-                          alt="Xả kho phụ kiện"
+                          src="https://images.unsplash.com/photo-1600294037681-c80b4cb5b434?w=800&h=600&fit=crop"
+                          alt="Tai nghe không dây"
                       />
                     </div>
 
                     <div>
-                    <span className="tag tag-red">
+                    <span className="tag tag-gold">
                       Xả Kho Công Nghệ
                     </span>
                       <h3>Phụ kiện chính hãng giảm đến 50%</h3>
@@ -348,7 +101,7 @@ export default function Home() {
                       </p>
                     </div>
 
-                    <a className="promo-link" href="#bestsellers">
+                    <a className="btn-bz btn-gold promo-action" href="#bestsellers">
                       Xem danh sách
                       <i className="bi bi-arrow-right ms-1"></i>
                     </a>
@@ -373,60 +126,60 @@ export default function Home() {
                   <h2>Danh Mục Thiết Bị Di Động</h2>
                 </div>
 
-                <a className="see-all" href="#bestsellers">
-                  Xem toàn bộ 8 ngành hàng
+                <Link className="see-all" href="/products">
+                  Xem tất cả sản phẩm
                   <i className="bi bi-arrow-right ms-1"></i>
-                </a>
+                </Link>
               </div>
 
               <div className="catrail-track">
-                <a className="cat-tile" href="#bestsellers">
+                <Link className="cat-tile" href="/products?category=dien-thoai">
                 <span className="cat-ic">
                   <i className="bi bi-phone fs-3 text-primary"></i>
                 </span>
                   <span className="cat-name">Điện thoại</span>
-                  <span className="cat-count">245 mẫu</span>
-                </a>
+                  <span className="cat-count">3 mẫu</span>
+                </Link>
 
-                <a className="cat-tile" href="#bestsellers">
+                <Link className="cat-tile" href="/products?category=laptop">
                 <span className="cat-ic">
                   <i className="bi bi-laptop fs-3 text-success"></i>
                 </span>
                   <span className="cat-name">Laptop</span>
-                  <span className="cat-count">180 mẫu</span>
-                </a>
+                  <span className="cat-count">2 mẫu</span>
+                </Link>
 
-                <a className="cat-tile" href="#bestsellers">
+                <Link className="cat-tile" href="/products?category=tablet">
                 <span className="cat-ic">
                   <i className="bi bi-tablet fs-3 text-info"></i>
                 </span>
                   <span className="cat-name">iPad / Tablet</span>
-                  <span className="cat-count">92 mẫu</span>
-                </a>
+                  <span className="cat-count">1 mẫu</span>
+                </Link>
 
-                <a className="cat-tile" href="#bestsellers">
+                <Link className="cat-tile" href="/products?category=phu-kien">
                 <span className="cat-ic">
                   <i className="bi bi-headphones fs-3 text-warning"></i>
                 </span>
                   <span className="cat-name">Tai nghe & Âm thanh</span>
-                  <span className="cat-count">310 mẫu</span>
-                </a>
+                  <span className="cat-count">3 mẫu</span>
+                </Link>
 
-                <a className="cat-tile" href="#bestsellers">
+                <Link className="cat-tile" href="/products?category=smartwatch">
                 <span className="cat-ic">
                   <i className="bi bi-smartwatch fs-3 text-danger"></i>
                 </span>
                   <span className="cat-name">Đồng hồ thông minh</span>
-                  <span className="cat-count">65 mẫu</span>
-                </a>
+                  <span className="cat-count">2 mẫu</span>
+                </Link>
 
-                <a className="cat-tile" href="#bestsellers">
+                <Link className="cat-tile" href="/products?category=phu-kien">
                 <span className="cat-ic">
                   <i className="bi bi-battery-charging fs-3 text-secondary"></i>
                 </span>
                   <span className="cat-name">Phụ kiện & Cáp sạc</span>
-                  <span className="cat-count">480 mẫu</span>
-                </a>
+                  <span className="cat-count">3 mẫu</span>
+                </Link>
               </div>
             </div>
           </section>
@@ -472,7 +225,7 @@ export default function Home() {
                   <article className="flash-item">
                     <div className="fi-frame">
                       <img
-                          src="/bazaar/img/p-phone.jpg"
+                          src="https://images.unsplash.com/photo-1695048133142-1a20484d2569?w=600&h=600&fit=crop"
                           alt="iPhone 15 Pro Max"
                       />
                       <span className="tag tag-red disc">-18%</span>
@@ -505,7 +258,7 @@ export default function Home() {
                   <article className="flash-item">
                     <div className="fi-frame">
                       <img
-                          src="/bazaar/img/hero-electronics.jpg"
+                          src="https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?w=600&h=600&fit=crop"
                           alt="Galaxy S24 Ultra"
                       />
                       <span className="tag tag-red disc">-22%</span>
@@ -540,7 +293,7 @@ export default function Home() {
                   <article className="flash-item">
                     <div className="fi-frame">
                       <img
-                          src="/bazaar/img/p-headphones.jpg"
+                          src="https://images.unsplash.com/photo-1600294037681-c80b4cb5b434?w=600&h=600&fit=crop"
                           alt="AirPods Pro 2"
                       />
                       <span className="tag tag-red disc">-28%</span>
@@ -609,7 +362,7 @@ export default function Home() {
 
                     <Link href="/product" className="text-decoration-none">
                       <img
-                          src="/bazaar/img/p-phone.jpg"
+                          src="https://images.unsplash.com/photo-1695048133142-1a20484d2569?w=600&h=600&fit=crop"
                           className="card-img-top p-2"
                           alt="iPhone 16 Pro Max"
                       />
@@ -656,7 +409,7 @@ export default function Home() {
                   </span>
 
                     <img
-                        src="/bazaar/img/hero-electronics.jpg"
+                        src="https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?w=600&h=600&fit=crop"
                         className="card-img-top p-2"
                         alt="Samsung Galaxy S24"
                     />
@@ -694,7 +447,7 @@ export default function Home() {
                   </span>
 
                     <img
-                        src="/bazaar/img/hero-audio.jpg"
+                        src="https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=600&h=600&fit=crop"
                         className="card-img-top p-2"
                         alt="MacBook Air M3"
                     />
@@ -732,7 +485,7 @@ export default function Home() {
                   </span>
 
                     <img
-                        src="/bazaar/img/p-camera.jpg"
+                        src="https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?w=600&h=600&fit=crop"
                         className="card-img-top p-2"
                         alt="iPad Pro M4"
                     />
@@ -767,141 +520,29 @@ export default function Home() {
         </main>
 
         {/* ===== FOOTER ===== */}
-        <footer className="site-footer bg-dark text-white pt-5 pb-3">
-          <div className="wrap">
-            <div className="row g-4">
-              <div className="col-lg-4">
-                <h5 className="fw-bold text-warning mb-3">
-                  <i className="bi bi-cpu-fill me-2"></i>
-                  TECH-MART AI STORE
-                </h5>
-
-                <p className="text-secondary small">
-                  Chuỗi bán lẻ thiết bị di động, điện thoại thông minh,
-                  laptop chính hãng hàng đầu Việt Nam. Tích hợp giải pháp
-                  đề xuất thông minh theo kiến trúc Microservices và
-                  Trí tuệ nhân tạo.
-                </p>
-
-                <p className="small mb-1">
-                  <i className="bi bi-geo-alt me-2 text-warning"></i>
-                  Trụ sở: 123 Cầu Giấy, Hà Nội
-                </p>
-
-                <p className="small mb-1">
-                  <i className="bi bi-telephone me-2 text-warning"></i>
-                  Tổng đài khiếu nại: 1800.6868
-                </p>
-
-                <p className="small">
-                  <i className="bi bi-envelope me-2 text-warning"></i>
-                  Email: hotro@techmart.vn
-                </p>
-              </div>
-
-              <div className="col-6 col-lg-2">
-                <h6 className="fw-bold mb-3 text-light">
-                  Thông Tin Chuỗi
-                </h6>
-
-                <ul className="list-unstyled text-secondary small lh-lg">
-                  <li>
-                    <a href="#" className="text-decoration-none text-secondary">
-                      Hệ thống 150 cửa hàng
-                    </a>
-                  </li>
-                  <li>
-                    <a href="#" className="text-decoration-none text-secondary">
-                      Chính sách bảo hành
-                    </a>
-                  </li>
-                  <li>
-                    <a href="#" className="text-decoration-none text-secondary">
-                      Chính sách đổi trả 30 ngày
-                    </a>
-                  </li>
-                  <li>
-                    <a href="#" className="text-decoration-none text-secondary">
-                      Giao hàng & Lắp đặt
-                    </a>
-                  </li>
-                </ul>
-              </div>
-
-              <div className="col-6 col-lg-2">
-                <h6 className="fw-bold mb-3 text-light">
-                  Sản Phẩm Hot
-                </h6>
-
-                <ul className="list-unstyled text-secondary small lh-lg">
-                  <li>
-                    <a href="#" className="text-decoration-none text-secondary">
-                      iPhone 16 Series
-                    </a>
-                  </li>
-                  <li>
-                    <a href="#" className="text-decoration-none text-secondary">
-                      Samsung Galaxy S24
-                    </a>
-                  </li>
-                  <li>
-                    <a href="#" className="text-decoration-none text-secondary">
-                      MacBook Pro M3
-                    </a>
-                  </li>
-                  <li>
-                    <a href="#" className="text-decoration-none text-secondary">
-                      iPad Air & Pro M4
-                    </a>
-                  </li>
-                </ul>
-              </div>
-
-              <div className="col-lg-4">
-                <h6 className="fw-bold mb-3 text-light">
-                  Đăng Ký Nhận Bản Tin AI Deals
-                </h6>
-
-                <p className="text-secondary small">
-                  Nhận ngay thông báo khi có đợt Flash Sale hoặc voucher
-                  giảm 500k cho thiết bị bạn quan tâm.
-                </p>
-
-                <div className="input-group mb-3">
-                  <input
-                      type="email"
-                      className="form-control"
-                      placeholder="Nhập email của bạn..."
-                  />
-
-                  <button className="btn btn-warning fw-bold">
-                    Đăng ký
-                  </button>
-                </div>
-
-                <div className="d-flex gap-2">
-                  <span className="badge bg-secondary">Visa</span>
-                  <span className="badge bg-secondary">Mastercard</span>
-                  <span className="badge bg-secondary">MoMo</span>
-                  <span className="badge bg-secondary">VNPay</span>
-                </div>
-              </div>
-            </div>
-
-            <hr className="border-secondary my-4" />
-
-            <div className="d-flex justify-content-between align-items-center flex-wrap small text-secondary">
-            <span>
-              © 2026 TECH-MART AI. Đồ án xây dựng Website Bán Hàng
-              Microservices Spring Boot & Next.js.
-            </span>
-
-              <span>
-              Thiết kế UI/UX trên nền tảng Bootstrap 5 Responsive.
-            </span>
-            </div>
-          </div>
-        </footer>
+        <StoreFooter />
       </>
   );
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
