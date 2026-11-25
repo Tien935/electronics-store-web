@@ -1,0 +1,15 @@
+#!/bin/sh
+# ----------------------------------------------------------------------------
+# Maven Wrapper Script for Linux/macOS
+# ----------------------------------------------------------------------------
+
+export MAVEN_PROJECTBASEDIR="${MAVEN_PROJECTBASEDIR:-$PWD}"
+WRAPPER_JAR="$MAVEN_PROJECTBASEDIR/.mvn/wrapper/maven-wrapper.jar"
+
+if [ -f "$WRAPPER_JAR" ]; then
+    exec java -jar "$WRAPPER_JAR" "$@"
+else
+    echo "[INFO] Downloading Apache Maven Wrapper jar..."
+    curl -o "$WRAPPER_JAR" https://repo.maven.apache.org/maven2/org/apache/maven/wrapper/maven-wrapper/3.2.0/maven-wrapper-3.2.0.jar
+    exec java -jar "$WRAPPER_JAR" "$@"
+fi
